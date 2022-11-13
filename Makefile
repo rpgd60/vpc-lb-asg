@@ -5,9 +5,11 @@ help:
 	@echo "${Project}"
 	@echo "${Description}"
 	@echo ""
-	@echo "	deploy - deploy VPC LB and ASG Group"
+	@echo "	vpc - deploy VPC"
+	@echo "	del-vpc - delete VPC"
+	@echo "	asg - deploy ALB and ASG (requires VPC)"
+	@echo "	del-asg - delete ALB and ASG"
 	@echo "	---"
-	@echo "	tear-down - destroy CloudFormation stacks"
 	@echo "	clean - clean temp folders"
 
 ###################### Parameters ######################
