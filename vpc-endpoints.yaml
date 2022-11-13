@@ -1,0 +1,131 @@
+### ---------------------------- Resources - VPC Endpoints ----------------    
+
+  VPCEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: VPCEndpoint SG - Allow https from instances in private subnet
+        GroupName: ssm-vpc-endpoint
+        VpcId: !Ref VPC
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        # Tags:
+        # - Key: NamePCPValue: !Sub ${VpcName}-${AWS::Region}
+
+  # VPCEndpointSSM:
+  VPCEndpointSSM:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*'
+            Resource:
+              - '*'
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
+      PrivateDnsEnabled: False
+      SecurityGroupIds: [!Ref  VPCEndpointSecurityGroup]  
+      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+
+  VPCEndpointS3:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*'
+            Resource:
+              - '*'
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
+      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      PrivateDnsEnabled: False
+
+  VPCEndpointEC2Messages:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*'
+            Resource:
+              - '*'
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2messages
+      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
+      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      PrivateDnsEnabled: False
+
+  VPCEndpointEC2:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*'
+            Resource:
+              - '*'
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2
+      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
+      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      PrivateDnsEnabled: False
+
+
+  VPCEndpointSSMMessages:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*'
+            Resource:
+              - '*'
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
+      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
+      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      PrivateDnsEnabled: False
+
+  VPCEndpointKMS:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*'
+            Resource:
+              - '*'
+      VpcId: !Ref VPC
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.kms
+      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
+      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      PrivateDnsEnabled: False

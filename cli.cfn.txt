@@ -1,0 +1,67 @@
+
+## VPC with NAT GW and Bastion Host
+
+aws cloudformation create-stack --stack-name base-network --template-body file://vpc.yaml \
+ --parameters ParameterKey=VpcName,ParameterValue=vpc200 \
+ ParameterKey=VpcCIDR,ParameterValue=10.200.0.0/16 \
+ ParameterKey=CreateNatGateways,ParameterValue=true \
+ ParameterKey=CreateBastion,ParameterValue=true \
+ ParameterKey=BastionKeyName,ParameterValue=mkeyireland1
+
+aws cloudformation update-stack --stack-name base-network --template-body file://vpc.yaml \
+ --parameters ParameterKey=VpcName,ParameterValue=vpc200 \
+ ParameterKey=VpcCIDR,ParameterValue=10.200.0.0/16 \
+ ParameterKey=CreateNatGateways,ParameterValue=true \
+ ParameterKey=CreateBastion,ParameterValue=true\
+ ParameterKey=BastionKeyName,ParameterValue=mkeyireland1
+
+####  Basic instances
+
+# Create
+
+aws cloudformation create-stack --stack-name inst1 --region eu-west-1 --template-body file://simple-instances.yaml \
+ --capabilities CAPABILITY_NAMED_IAM \
+ --parameters ParameterKey=EnvironmentName,ParameterValue=inst1
+
+# update
+aws cloudformation update-stack --stack-name inst1 --region eu-west-1 --template-body file://simple-instances.yaml \
+ --capabilities CAPABILITY_NAMED_IAM \
+ --parameters ParameterKey=EnvironmentName,ParameterValue=inst1
+
+
+## LB and ASG
+aws cloudformation create-stack --stack-name app30 --region eu-west-1 --template-body file://asg-lb.yaml \
+ --capabilities CAPABILITY_NAMED_IAM \
+ --parameters ParameterKey=EnvironmentName,ParameterValue=app30 \
+ ParameterKey=EnableAutoScalingTargetTracking,ParameterValue=false \
+ ParameterKey=AppName,ParameterValue=app30 
+ 
+
+aws cloudformation update-stack --stack-name app30 --region eu-west-1 --template-body file://asg-lb.yaml \
+ --capabilities CAPABILITY_NAMED_IAM \
+ --parameters ParameterKey=EnvironmentName,ParameterValue=app30 \
+ ParameterKey=EnableAutoScalingTargetTracking,ParameterValue=false \
+ ParameterKey=AppName,ParameterValue=app30 
+
+
+
+# Paris 
+aws cloudformation create-stack --stack-name base-network --region eu-west-3 --template-body file://vpc.yaml \
+ --parameters ParameterKey=VpcName,ParameterValue=vpc200 \
+ ParameterKey=VpcCIDR,ParameterValue=10.200.0.0/16 \
+ ParameterKey=CreateNatGateways,ParameterValue=true \
+ ParameterKey=CreateBastion,ParameterValue=true \
+ ParameterKey=BastionKeyName,ParameterValue=mkeyparis1
+
+aws cloudformation update-stack --stack-name base-network --region eu-west-3 --template-body file://vpc.yaml \
+ --parameters ParameterKey=VpcName,ParameterValue=vpc200 \
+ ParameterKey=VpcCIDR,ParameterValue=10.200.0.0/16 \
+ ParameterKey=CreateNatGateways,ParameterValue=true \
+ ParameterKey=CreateBastion,ParameterValue=true\
+ ParameterKey=BastionKeyName,ParameterValue=mkeyparis1
+
+
+
+Other CFN Commands
+aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE
+

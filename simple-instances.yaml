@@ -1,0 +1,126 @@
+
+
+Description:  Simple Instance stack importing VPC resources from another stack
+  
+Parameters:
+  RoleForSsm:
+    Description: Role to enable SSM
+    Type: String
+    Default: EC2RoleForSSM
+
+  AppName:
+    Description:  Application Name - used for Resource Groups etc.
+    Type: String
+    Default: app30
+
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: base-network
+
+  ##  Server -
+  ServerAmiId:
+    Description: AMI ID for web servers
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs
+
+  ServerInstanceType:
+    Description: Instance type for web servers
+    Type: String
+    AllowedValues:
+      - t2.micro
+      - t2.nano
+    Default: t2.micro
+
+Resources:
+  ServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      DisableApiTermination: false
+      # IamInstanceProfile: "String"
+      ImageId: !Ref ServerAmiId
+      InstanceType: !Ref ServerInstanceType
+      # KeyName: !Ref BastionKeyName
+      SecurityGroupIds:
+        - 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-HttpSecurityGroup
+      SubnetId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-PrivateSubnet1
+      IamInstanceProfile: !Ref InstanceProfileForSsm
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-serverpriv  
+        - Key: app
+          Value: !Ref AppName 
+        - Key: disposable
+          Value: 'true'
+      # UserData:
+      #   Fn::Base64: 
+      #     !Sub |
+      #       #!/bin/bash
+      #       yum update -y
+      #       yum install -y httpd
+      #       systemctl start httpd
+      #       systemctl enable httpd
+      #       usermod -a -G apache ec2-user
+      #       chown -R ec2-user:apache /var/www
+      #       chmod 2775 /var/www
+      #       find /var/www -type d -exec chmod 2775 {} \;
+      #       find /var/www -type f -exec chmod 0664 {} \;
+      #       echo "hello world" > /var/www/html/index.html
+
+  ServerInstancePub:
+    Type: AWS::EC2::Instance
+    Properties:
+      DisableApiTermination: false
+      # IamInstanceProfile: "String"
+      ImageId: !Ref ServerAmiId
+      InstanceType: !Ref ServerInstanceType
+      ## KeyName: !Ref BastionKeyName
+      SecurityGroupIds:
+        - 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-HttpSecurityGroup
+      SubnetId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-PublicSubnet1
+      IamInstanceProfile: !Ref InstanceProfileForSsm
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-serverpub
+        - Key: disposable
+          Value: 'true'
+        - Key: app
+          Value: !Ref AppName          
+      # UserData:
+      #   Fn::Base64: 
+      #     !Sub |
+      #       #!/bin/bash
+      #       yum update -y
+      #       yum install -y httpd
+      #       systemctl start httpd
+      #       systemctl enable httpd
+      #       usermod -a -G apache ec2-user
+      #       chown -R ec2-user:apache /var/www
+      #       chmod 2775 /var/www
+      #       find /var/www -type d -exec chmod 2775 {} \;
+      #       find /var/www -type f -exec chmod 0664 {} \;
+      #       echo "hello world" > /var/www/html/index.html
+
+  InstanceProfileForSsm:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: !Sub '${EnvironmentName}-ssm'
+      Path: /
+      Roles: [!Ref RoleForSsm] 
