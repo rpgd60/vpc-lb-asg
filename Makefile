@@ -24,6 +24,7 @@ NetworkStackName ?= base-network
 AsgLbStackName ?= asg-lb-demo
 VpcCIDR ?= "10.200.0.0/16"
 
+
 LocalAWSRegion ?= eu-west-1
 Profile ?= course
 
@@ -63,6 +64,10 @@ del-vpc:
 del-asg:
 	@read -p "Are you sure that you want to destroy stack '${AsgLbStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgLbStackName}" --profile ${Profile}
+
+s3:
+	aws s3 cp vpc.yaml s3://rp-demo1/cfn/vpc-lb-asg/vpc.yaml --profile ${Profile}
+	aws s3 cp asg-lb.yaml s3://rp-demo1/cfn/vpc-lb-asg/asg-lb.yaml --profile ${Profile}
 
 # tear-down:
 # 	@read -p "Are you sure that you want to destroy stack '${Project}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
