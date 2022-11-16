@@ -15,7 +15,7 @@ help:
 ###################### Parameters ######################
 Description ?= VPC and ASG with LB
 # CFN Stack Parameters
-AppName ?= acctg
+AppName ?= blog
 Project ?= acme
 Environment ?= dev
 CreateNatGateways ?= true
