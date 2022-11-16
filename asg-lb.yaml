@@ -1,5 +1,9 @@
-### ------------ Resources - Load Balancer Auto Scaling Group and associated Web Servers (launch template) ----------------    
-## Load Balancer Auto Scaling Group and Launch Template (and related security groups)
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Description:  Create Launch Template, ASG and ALB
+
+### ------------ Parameters  ----------------    
 
 
 Parameters:
@@ -29,6 +33,7 @@ Parameters:
     # Default: base-network
 
 
+### ------------ Resources - Load Balancer Auto Scaling Group and associated Web Servers (launch template) ----------------    
 
   ## Web Server - Launch Template
   WebAmiId:
