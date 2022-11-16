@@ -13,10 +13,12 @@ Parameters:
   Project:
     Description: Project Name prefixed to resource names
     Type: String
+    Default: "acme999"
 
   Environment:
     Description: Environment name (e.g. dev, test, prod)
     Type: String
+    Default: "dev"
 
   VpcCIDR:
     Description: Please enter the IP range (CIDR notation) for this VPC
@@ -45,7 +47,9 @@ Parameters:
   BastionAmiId:
     Description: AMI ID for bastion hosts
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs  # yields ami-053f95332f3cdcbf3 for eu-west-1 (october 1, 2021)
+    # Newer Linux Kernel 5.x
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2
+    # Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs  # yields ami-053f95332f3cdcbf3 for eu-west-1 (october 1, 2021)
     # TODO - explore if / how latest
     # Type: AWS::EC2::Image::Id
     # Default: ami-0d1bf5b68307103c2 
@@ -82,6 +86,7 @@ Metadata:
           default: "VPC and Networking Configuration"
         Parameters: 
           - Project
+          - Environment
           - VpcCIDR
           - CreateNatGateways
       - 
