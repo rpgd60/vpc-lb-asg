@@ -3,13 +3,20 @@
 
 
 Parameters:
+  Project:
+    Description: Project Name prefixed to resource names
+    Type: String
+    Default: "acme999"
+
   AppName:
     Description:  Application Name - used for Resource Groups etc.
     Type: String
+    Default: "app1"
 
   Environment:
-    Description: An environment name that is included to resource names
+    Description: Environment name (e.g. dev, test, prod)
     Type: String
+    Default: "dev"
 
   NetworkStackName:
     Description: >-
@@ -98,19 +105,19 @@ Resources:
           CidrIp: !Ref HTTPRangeAllow
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-lb-sg    
+          Value: !Sub ${Project}-${Environment}-lb-sg    
 
   WebServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub ${Environment}-web-sg
+      GroupName: !Sub ${Project}-${Environment}-web-sg
       GroupDescription: "Security Group for web servers"
       VpcId:
         Fn::ImportValue:
           !Sub ${NetworkStackName}-VPCID
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-web-sg
+          Value: !Sub ${Project}-${Environment}-web-sg
 
   WebInboundRuleHTTP:
     Type: AWS::EC2::SecurityGroupIngress
@@ -206,7 +213,7 @@ Resources:
         - Key: environment
           Value: !Sub ${Environment}
         - Key: Name
-          Value: !Sub ${Environment}-webtg1
+          Value: !Sub ${Project}-${Environment}-webtg1
 
 
   WebLoadBalancer:
@@ -243,7 +250,7 @@ Resources:
           - Key: environment
             Value: !Sub ${Environment}
           - Key: Name
-            Value: !Sub ${Environment}-alb
+            Value: !Sub ${Project}-${Environment}-alb
 
   HTTPlistener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
@@ -286,7 +293,7 @@ Resources:
             ResourceType: instance
             Tags:
             - Key: Name
-              Value: !Sub ${Environment}-${AppName}
+              Value: !Sub ${Project}-${Environment}-${AppName}
             - Key: disposable
               Value: 'false'
             - Key: app
