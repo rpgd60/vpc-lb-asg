@@ -1,18 +1,46 @@
-### ---------------------------- Resources - VPC Endpoints ----------------    
 
-  VPCEndpointSecurityGroup:
+AWSTemplateFormatVersion: 2010-09-09
+
+Description:  Create VPC Endpoints for SSM 
+
+### ---------------------------- Parameters ----------------    
+Parameters:
+
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    # Default: base-network
+
+  Project:
+    Description: Project Name prefixed to resource names
+    Type: String
+    Default: "acme999"
+
+### ---------------------------- Resources - VPC Endpoints ----------------    
+Resources:
+  VPCEndPointSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
         GroupDescription: VPCEndpoint SG - Allow https from instances in private subnet
         GroupName: ssm-vpc-endpoint
-        VpcId: !Ref VPC
+        VpcId: 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-VPCID
         SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
-        # Tags:
-        # - Key: NamePCPValue: !Sub ${VpcName}-${AWS::Region}
+        Tags:
+        - Key: Name
+          Value: !Sub ${Project}-vpce
+
+
 
   # VPCEndpointSSM:
   VPCEndpointSSM:
@@ -27,12 +55,18 @@
               - '*'
             Resource:
               - '*'
-      VpcId: !Ref VPC
+      VpcId: 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-VPCID
       VpcEndpointType: Interface
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
       PrivateDnsEnabled: False
-      SecurityGroupIds: [!Ref  VPCEndpointSecurityGroup]  
-      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      SecurityGroupIds: [!Ref  VPCEndPointSG]  
+      SubnetIds: 
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet1
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet2
 
   VPCEndpointS3:
     Type: AWS::EC2::VPCEndpoint
@@ -46,12 +80,19 @@
               - '*'
             Resource:
               - '*'
-      VpcId: !Ref VPC
+      VpcId: 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-VPCID
       VpcEndpointType: Interface
       ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
-      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
-      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      SecurityGroupIds: [!Ref VPCEndPointSG]  
+      SubnetIds: 
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet1
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet2
       PrivateDnsEnabled: False
+
 
   VPCEndpointEC2Messages:
     Type: AWS::EC2::VPCEndpoint
@@ -65,12 +106,19 @@
               - '*'
             Resource:
               - '*'
-      VpcId: !Ref VPC
+      VpcId: 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-VPCID
       VpcEndpointType: Interface
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2messages
-      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
-      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      SecurityGroupIds: [!Ref VPCEndPointSG]  
+      SubnetIds: 
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet1
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet2
       PrivateDnsEnabled: False
+
 
   VPCEndpointEC2:
     Type: AWS::EC2::VPCEndpoint
@@ -84,12 +132,19 @@
               - '*'
             Resource:
               - '*'
-      VpcId: !Ref VPC
+      VpcId: 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-VPCID
       VpcEndpointType: Interface
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2
-      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
-      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      SecurityGroupIds: [!Ref VPCEndPointSG]  
+      SubnetIds: 
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet1
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet2
       PrivateDnsEnabled: False
+
 
 
   VPCEndpointSSMMessages:
@@ -104,11 +159,17 @@
               - '*'
             Resource:
               - '*'
-      VpcId: !Ref VPC
+      VpcId: 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-VPCID
       VpcEndpointType: Interface
       ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
-      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
-      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      SecurityGroupIds: [!Ref VPCEndPointSG]  
+      SubnetIds: 
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet1
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet2
       PrivateDnsEnabled: False
 
   VPCEndpointKMS:
@@ -123,9 +184,15 @@
               - '*'
             Resource:
               - '*'
-      VpcId: !Ref VPC
+      VpcId: 
+          Fn::ImportValue:
+            !Sub ${NetworkStackName}-VPCID
       VpcEndpointType: Interface
       ServiceName: !Sub com.amazonaws.${AWS::Region}.kms
-      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]  
-      SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      SecurityGroupIds: [!Ref VPCEndPointSG]  
+      SubnetIds: 
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet1
+        - Fn::ImportValue:
+            !Sub ${NetworkStackName}-PublicSubnet2
       PrivateDnsEnabled: False
