@@ -21,10 +21,11 @@ Environment ?= dev
 CreateNatGateways ?= true
 CreateBastion ?= false
 NetworkStackName ?= base-network
+VpcEndpointStackName ?= vpc-endpoints
 AsgLbStackName ?= asg-lb-demo
 VpcCIDR ?= "10.200.0.0/16"
-
-
+S3FullPath ?= "s3://rp-demo1/cfn/vpc-lb-asg"
+TargetAutoScaling ?= "true"
 LocalAWSRegion ?= eu-west-1
 Profile ?= course
 
@@ -44,6 +45,19 @@ vpc:
 		--no-fail-on-empty-changeset \
 		--profile ${Profile}
 
+vpc-endpoints:
+	aws cloudformation deploy \
+		--template-file ./vpc-endpoints.yaml \
+		--region ${LocalAWSRegion} \
+		--stack-name ${VpcEndpointStackName} \
+		--parameter-overrides \
+			AppName=${AppName} \
+			Project=${Project} \
+			Environment=${Environment} \
+			NetworkStackName=${NetworkStackName} \
+		--no-fail-on-empty-changeset \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--profile ${Profile}
 asg:
 	aws cloudformation deploy \
 		--template-file ./asg-lb.yaml \
@@ -54,6 +68,7 @@ asg:
 			Project=${Project} \
 			Environment=${Environment} \
 			NetworkStackName=${NetworkStackName} \
+			TargetAutoScaling=${TargetAutoScaling} \
 		--no-fail-on-empty-changeset \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--profile ${Profile}
@@ -61,13 +76,19 @@ asg:
 del-vpc:
 	@read -p "Are you sure that you want to destroy stack '${NetworkStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${NetworkStackName}" --profile ${Profile}
+
+del-vpc-endpoints:
+	@read -p "Are you sure that you want to destroy stack '${VpcEndpointStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
+	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${VpcEndpointStackName}" --profile ${Profile}
+
 del-asg:
 	@read -p "Are you sure that you want to destroy stack '${AsgLbStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgLbStackName}" --profile ${Profile}
 
 s3:
-	aws s3 cp vpc.yaml s3://rp-demo1/cfn/vpc-lb-asg/vpc.yaml --profile ${Profile}
-	aws s3 cp asg-lb.yaml s3://rp-demo1/cfn/vpc-lb-asg/asg-lb.yaml --profile ${Profile}
+	aws s3 cp vpc.yaml ${S3FullPath}/vpc.yaml --profile ${Profile}
+	aws s3 cp asg-lb.yaml ${S3FullPath}/asg-lb.yaml --profile ${Profile}
+	aws s3 cp asg-lb.yaml ${S3FullPath}/vpc-endpoints.yaml --profile ${Profile}
 
 # tear-down:
 # 	@read -p "Are you sure that you want to destroy stack '${Project}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
