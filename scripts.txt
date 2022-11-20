@@ -1,0 +1,24 @@
+## curl command to hit ALB
+
+GET url_effective
+
+aws cloudformation describe-stacks --stack-name asg  --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile course
+
+
+ ```
+ export LB_URL=$(aws cloudformation describe-stacks --stack-name asg  --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile course)
+ curl $LB_URL
+ 
+ while true;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
+```
+or slower
+```
+ while sleep 1;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
+```
+
+
+LB_URL=$(aws cloudformation describe-stacks --stack-name asg --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile course)
+curl $LB_URL
+
+LB_URL=$(aws cloudformation describe-stacks --stack-name asg --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile course)
+while sleep 1;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
