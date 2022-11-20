@@ -139,6 +139,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${Project}-${Environment}-pub1
+          
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -285,7 +286,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
 #    Condition: NONE - for the time being create bastion sg even if bastion host not created 
     Properties:
-      GroupName: "bastion-sg"
+      # GroupName: "bastion-sg" - problems when doing stack update
       GroupDescription: "Security Group for Bastion Host"
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -318,7 +319,7 @@ Resources:
   HttpSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: "http-sg"
+      # GroupName: "http-sg"   -- problems when doing stack updates
       GroupDescription: "Simple security Group for test server in private subnet"
       VpcId: !Ref VPC
       SecurityGroupIngress:

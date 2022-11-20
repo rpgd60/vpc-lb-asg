@@ -1,0 +1,42 @@
+
+### ---------------------------- Parameters ----------------    
+Parameters:
+  Project:
+    Description: Project Name prefixed to resource names
+    Type: String
+    Default: "acme999"
+
+  Environment:
+    Description: Environment name (e.g. dev, test, prod)
+    Type: String
+    Default: "dev"
+
+### --------------------------- Resources - VPC Endpoints ----------------   
+Resources:
+  ServerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ["-", [!Ref Project, !Ref Environment, "SSMRole"]]
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+
+
+# -------------------------------Outputs ----------------
+Outputs:
+
+  ServerRole:
+    Description: SSM Role
+    Value: !Ref ServerRole
+    Export:
+      Name: !Sub ${AWS::StackName}-SSMRole

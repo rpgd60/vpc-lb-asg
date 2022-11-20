@@ -1,0 +1,120 @@
+Description:  Simple EC2 Instance stack importing VPC resources from another stack
+  
+Parameters:
+
+  Project:
+    Description: Project Name prefixed to resource names
+    Type: String
+    Default: test1
+
+  AppName:
+    Description:  Application Name - used for Resource Groups etc.
+    Type: String
+    Default: testapp
+
+  EnvironmentName:
+    Description: Environment (e.g. dev, prod, test ...)
+    Type: String
+    Default: test
+
+  VpcStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the VPC and subnet that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: base-network
+
+  IamStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the IAM Resources (e.g. Role for SSM)
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+  ##  Server -
+  ServerAmiId:
+    Description: AMI ID for server
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    # Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2
+
+  ServerInstanceType:
+    Description: Instance type for web servers
+    Type: String
+    AllowedValues:
+      - t2.micro
+      - t2.nano
+    Default: t2.micro
+
+Resources:
+  ServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      DisableApiTermination: false
+      # IamInstanceProfile: "String"
+      ImageId: !Ref ServerAmiId
+      InstanceType: !Ref ServerInstanceType
+      # KeyName: !Ref BastionKeyName
+      SecurityGroupIds:
+        - 
+          Fn::ImportValue:
+            !Sub ${VpcStackName}-HttpSecurityGroup
+      SubnetId:
+        Fn::ImportValue:
+          !Sub ${VpcStackName}-PrivateSubnet1
+      IamInstanceProfile: !Ref InstanceProfileForSsm
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}-${EnvironmentName}-priv
+        - Key: app
+          Value: !Ref AppName 
+        - Key: disposable
+          Value: 'true'
+
+
+  ServerInstancePub:
+    Type: AWS::EC2::Instance
+    Properties:
+      DisableApiTermination: false
+      # IamInstanceProfile: "String"
+      ImageId: !Ref ServerAmiId
+      InstanceType: !Ref ServerInstanceType
+      ## KeyName: !Ref BastionKeyName
+      SecurityGroupIds:
+        - 
+          Fn::ImportValue:
+            !Sub ${VpcStackName}-HttpSecurityGroup
+      SubnetId:
+        Fn::ImportValue:
+          !Sub ${VpcStackName}-PublicSubnet1
+      IamInstanceProfile: !Ref InstanceProfileForSsm
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}-${EnvironmentName}-pub
+        - Key: disposable
+          Value: 'true'
+        - Key: app
+          Value: !Ref AppName          
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
+            systemctl start httpd
+            systemctl enable httpd
+            echo "Cfn Stack: ${AWS::StackName} - Host: $(hostname -f)" > /var/www/html/index.html
+  
+  InstanceProfileForSsm:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: !Sub ${EnvironmentName}-ssm
+      Path: /
+      Roles:
+        -
+          Fn::ImportValue:
+            !Sub ${IamStackName}-SSMRole
+

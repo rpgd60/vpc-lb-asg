@@ -22,7 +22,7 @@ Parameters:
     Type: String
     Default: "dev"
 
-  NetworkStackName:
+  VpcStackName:
     Description: >-
       Name of an active CloudFormation stack that contains the networking
       resources, such as the VPC and subnet that will be used in this stack.
@@ -32,8 +32,15 @@ Parameters:
     AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
     # Default: base-network
 
+  TargetAutoScaling:
+    Description: Enable Target Autoscaling
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"    
 
-### ------------ Resources - Load Balancer Auto Scaling Group and associated Web Servers (launch template) ----------------    
+
 
   ## Web Server - Launch Template
   WebAmiId:
@@ -48,7 +55,8 @@ Parameters:
     AllowedValues:
       - t2.micro
       - t2.nano
-    Default: t2.micro
+      - t3.micro      
+    Default: t3.micro
 
 
   EnableAutoScalingTargetTracking:
@@ -86,10 +94,12 @@ Parameters:
     Type: String
     Default: EC2RoleForSSM
 
+## --------------- Conditions --------------------------
+
 Conditions: 
-  AutoScalingTargetTrackingCondition: !Equals [!Ref 'EnableAutoScalingTargetTracking', 'true']
+  AutoScalingTargetTrackingCondition: !Equals [!Ref 'TargetAutoScaling', 'true']
 
-
+### ------------ Resources - Load Balancer Auto Scaling Group and associated Web Servers (launch template) ----------------    
 Resources:
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -98,7 +108,7 @@ Resources:
       GroupDescription: Security Group for Load Balancer
       VpcId: 
         Fn::ImportValue:
-          !Sub ${NetworkStackName}-VPCID
+          !Sub ${VpcStackName}-VPCID
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -119,7 +129,7 @@ Resources:
       GroupDescription: "Security Group for web servers"
       VpcId:
         Fn::ImportValue:
-          !Sub ${NetworkStackName}-VPCID
+          !Sub ${VpcStackName}-VPCID
       Tags:
         - Key: Name
           Value: !Sub ${Project}-${Environment}-web-sg
@@ -155,7 +165,7 @@ Resources:
       ToPort: 22
       SourceSecurityGroupId: 
         Fn::ImportValue:
-          !Sub ${NetworkStackName}-BastionSecurityGroup
+          !Sub ${VpcStackName}-BastionSecurityGroup
 
   WebInboundRuleBastionICMP:
     Type: AWS::EC2::SecurityGroupIngress
@@ -168,7 +178,7 @@ Resources:
       ToPort: -1
       SourceSecurityGroupId: 
         Fn::ImportValue:
-          !Sub ${NetworkStackName}-BastionSecurityGroup
+          !Sub ${VpcStackName}-BastionSecurityGroup
 
   WebTargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -213,7 +223,7 @@ Resources:
       UnhealthyThresholdCount: 2    # def 2 for HTTP
       VpcId: 
         Fn::ImportValue:
-          !Sub ${NetworkStackName}-VPCID
+          !Sub ${VpcStackName}-VPCID
       Tags:
         - Key: environment
           Value: !Sub ${Environment}
@@ -229,9 +239,9 @@ Resources:
         Type: "application"
         Subnets: 
         - Fn::ImportValue:
-            !Sub ${NetworkStackName}-PublicSubnet1
+            !Sub ${VpcStackName}-PublicSubnet1
         - Fn::ImportValue:
-            !Sub ${NetworkStackName}-PublicSubnet2
+            !Sub ${VpcStackName}-PublicSubnet2
         SecurityGroups: 
           - !Ref LoadBalancerSecurityGroup
         IpAddressType: "ipv4"
@@ -324,7 +334,7 @@ Resources:
       DesiredCapacity: !Ref DesiredCapacityDefault
       MaxSize:  !Ref MaxSizeDefault
       HealthCheckGracePeriod: 120 ## Default 300 from console,  0 from SDK and CLI
-      HealthCheckType: "ELB"
+      HealthCheckType: "EC2"   ## Temp - previously: "ELB"
       LaunchTemplate: 
           LaunchTemplateId: !Ref WebLaunchTemplate
           Version: !GetAtt WebLaunchTemplate.LatestVersionNumber
@@ -332,9 +342,9 @@ Resources:
       TargetGroupARNs: [ !Ref WebTargetGroup1 ]
       VPCZoneIdentifier: 
         - Fn::ImportValue:
-            !Sub ${NetworkStackName}-PrivateSubnet1
+            !Sub ${VpcStackName}-PrivateSubnet1
         - Fn::ImportValue:
-            !Sub ${NetworkStackName}-PrivateSubnet2
+            !Sub ${VpcStackName}-PrivateSubnet2
       MetricsCollection:
         - Granularity: 1Minute
           Metrics:
@@ -356,7 +366,7 @@ Resources:
           Value: !Sub ${Environment}
           PropagateAtLaunch: true
         - Key: Name
-          Value: !Sub ${Environment}-webasg
+          Value: !Sub ${Project}-${Environment}
           PropagateAtLaunch: true
             # Fn::GetAtt : [ "WebLaunchTemplate", "LatestVersionNumber" ]
 
@@ -370,24 +380,23 @@ Resources:
         DisableScaleIn: true
         PredefinedMetricSpecification: 
           PredefinedMetricType: ASGAverageCPUUtilization
-        TargetValue: 50
+        TargetValue: 70
 
-# Temporarily disabled - 
-  # WebTargetTrackingLoadBalancerRequests:
-  #   Type: AWS::AutoScaling::ScalingPolicy
-  #   Condition: AutoScalingTargetTrackingCondition
-  #   Properties: 
-  #     PolicyType: TargetTrackingScaling
-  #     AutoScalingGroupName: !Ref WebAutoScalingGroup  
-  #     TargetTrackingConfiguration: 
-  #       DisableScaleIn: false
-  #       PredefinedMetricSpecification: 
-  #         PredefinedMetricType: ALBRequestCountPerTarget
-  #         ResourceLabel:  !Join 
-  #           - '/' 
-  #           - - !GetAtt WebLoadBalancer.LoadBalancerFullName
-  #             - !GetAtt WebTargetGroup1.TargetGroupFullName
-  #       TargetValue: 100  
+  WebTargetTrackingLoadBalancerRequests:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Condition: AutoScalingTargetTrackingCondition
+    Properties: 
+      PolicyType: TargetTrackingScaling
+      AutoScalingGroupName: !Ref WebAutoScalingGroup  
+      TargetTrackingConfiguration: 
+        DisableScaleIn: false
+        PredefinedMetricSpecification: 
+          PredefinedMetricType: ALBRequestCountPerTarget
+          ResourceLabel:  !Join 
+            - '/' 
+            - - !GetAtt WebLoadBalancer.LoadBalancerFullName
+              - !GetAtt WebTargetGroup1.TargetGroupFullName
+        TargetValue: 80 
 
 
   WebScheduledActionOut: 
@@ -397,8 +406,9 @@ Resources:
       MaxSize: 8
       DesiredCapacity: 6 
       MinSize: 2
-      Recurrence: "40 12 * * *"
+      Recurrence: "40 9 * * *"
       TimeZone: Europe/Madrid
+
   WebScheduledActionIn: 
     Type: AWS::AutoScaling::ScheduledAction
     Properties:
@@ -406,13 +416,13 @@ Resources:
       MinSize: !Ref MinSizeDefault
       DesiredCapacity: !Ref DesiredCapacityDefault
       MaxSize: !Ref MaxSizeDefault
-      Recurrence: "0 13 * * *"
+      Recurrence: "0 10 * * *"
       TimeZone: Europe/Madrid
 
   ServerRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ["-", [NP1, Ref: "AWS::StackName", "SSMRole"]]
+      RoleName: !Join ["-", [!Ref Project, !Ref "AWS::StackName", "SSMRole"]]
       Path: "/"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
@@ -433,8 +443,47 @@ Resources:
       Roles:
         - !Ref ServerRole
 
+## CloudWatch - Sample Alarms created explicitly
+
+  AlbCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: CPU alarm for EC2 Instances in ALB
+      # AlarmActions:
+      # - Ref: "logical name of an AWS::SNS::Topic resource"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 2
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: LoadBalancer 
+          Value: !GetAtt WebLoadBalancer.LoadBalancerFullName
+
+  AlbPktInAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Packets In Alarm for EC2 Instances in ALB
+      # AlarmActions:
+      # - Ref: "logical name of an AWS::SNS::Topic resource"
+      MetricName: NetworkPacketsIn
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 100
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: LoadBalancer 
+          Value: !Ref WebLoadBalancer
+          # Value: !GetAtt WebLoadBalancer.LoadBalancerFullName
+
 Outputs:   
   LoadBalancerUrl:
     Value:  !Sub "http://${WebLoadBalancer.DNSName}/" 
   LoadBalancerFullName:
     Value: !GetAtt WebLoadBalancer.LoadBalancerFullName
+
+
