@@ -58,15 +58,6 @@ Parameters:
       - t3.micro      
     Default: t3.micro
 
-
-  EnableAutoScalingTargetTracking:
-    Description: "Enable AutoScaling Target Tracking Policies: Average CPU and LB Requests"
-    Type: String
-    Default: "false"
-    AllowedValues:
-      - "true"
-      - "false"
-
   MinSizeDefault:
     Description: Minimum size of autoscaling group
     Type: String
@@ -125,7 +116,7 @@ Resources:
   WebServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub ${Project}-${Environment}-web-sg
+      # GroupName: !Sub ${Project}-${Environment}-web-sg
       GroupDescription: "Security Group for web servers"
       VpcId:
         Fn::ImportValue:
@@ -225,16 +216,20 @@ Resources:
         Fn::ImportValue:
           !Sub ${VpcStackName}-VPCID
       Tags:
+        - Key: Name
+          Value: !Sub ${Project}-${Environment}
         - Key: environment
           Value: !Sub ${Environment}
-        - Key: Name
-          Value: !Sub ${Project}-${Environment}-webtg1
+        - Key: application
+          Value: !Sub ${AppName}-${Environment}
+
+
 
 
   WebLoadBalancer:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties:
-        Name: !Sub ${Environment}-alb
+        Name: !Sub ${Project}-${Environment}-alb
         Scheme: "internet-facing"
         Type: "application"
         Subnets: 
@@ -326,7 +321,7 @@ Resources:
   WebAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties: 
-      AutoScalingGroupName: !Sub ${Environment}-webasg
+      AutoScalingGroupName: !Sub ${Project}-${Environment}-asg
       # CapacityRebalance: Boolean
       # Context: String
       Cooldown: "120"   # def 300?
@@ -352,14 +347,14 @@ Resources:
             - GroupMaxSize
             - GroupDesiredCapacity
             - GroupInServiceInstances
-            - GroupPendingInstances
-            - GroupStandbyInstances
-            - GroupTerminatingInstances
+            # - GroupPendingInstances
+            # - GroupStandbyInstances
+            # - GroupTerminatingInstances
             - GroupTotalInstances
             - GroupInServiceCapacity
-            - GroupPendingCapacity
-            - GroupStandbyCapacity
-            - GroupTerminatingCapacity
+            # - GroupPendingCapacity
+            # - GroupStandbyCapacity
+            # - GroupTerminatingCapacity
             - GroupTotalCapacity
       Tags: 
         - Key: environment
