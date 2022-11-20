@@ -55,8 +55,9 @@ Parameters:
     AllowedValues:
       - t2.micro
       - t2.nano
-      - t3.micro      
-    Default: t3.micro
+      - t3.micro   
+      - t3.nano   
+    Default: t3.nano
 
   MinSizeDefault:
     Description: Minimum size of autoscaling group
@@ -365,6 +366,7 @@ Resources:
           PropagateAtLaunch: true
             # Fn::GetAtt : [ "WebLaunchTemplate", "LatestVersionNumber" ]
 
+## Target Tracking Alarms
   WebTargetTrackingCpu:
     Type: AWS::AutoScaling::ScalingPolicy
     Condition: AutoScalingTargetTrackingCondition
@@ -387,12 +389,16 @@ Resources:
         DisableScaleIn: false
         PredefinedMetricSpecification: 
           PredefinedMetricType: ALBRequestCountPerTarget
-          ResourceLabel:  !Join 
-            - '/' 
-            - - !GetAtt WebLoadBalancer.LoadBalancerFullName
-              - !GetAtt WebTargetGroup1.TargetGroupFullName
+          # ResourceLabel:  !Join 
+          #   - '/' 
+          #   - - !GetAtt WebLoadBalancer.LoadBalancerFullName
+          #     - !GetAtt WebTargetGroup1.TargetGroupFullName
+          ResourceLabel:  !Join ['/', 
+              [!GetAtt WebLoadBalancer.LoadBalancerFullName, 
+                !GetAtt WebTargetGroup1.TargetGroupFullName]]
         TargetValue: 80 
 
+## Time based Autoscaling Actions
 
   WebScheduledActionOut: 
     Type: AWS::AutoScaling::ScheduledAction
@@ -414,6 +420,65 @@ Resources:
       Recurrence: "0 10 * * *"
       TimeZone: Europe/Madrid
 
+## CloudWatch - Sample Alarms created explicitly
+
+  AsgCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: CPU alarm for EC2 Instances in ASG
+      AlarmName: CPU Utilization for ASG EC2 Instances
+      # AlarmActions:
+      # - Ref: "logical name of an AWS::SNS::Topic resource"
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 2
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref WebAutoScalingGroup
+
+  AsgPktInAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: PacketsIn Alarm for EC2 Instances in ASG
+      AlarmName: PacketsIn for ASG EC2 Instances
+      # AlarmActions:
+      # - Ref: "logical name of an AWS::SNS::Topic resource"
+      MetricName: NetworkPacketsIn
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 400
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref WebAutoScalingGroup
+
+  AsgPktOutAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: PacketsOut Alarm for EC2 Instances in ASG
+      AlarmName: PacketsOut for ASG EC2 Instances
+      # AlarmActions:
+      # - Ref: "logical name of an AWS::SNS::Topic resource"
+      MetricName: NetworkPacketsOut
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 400
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref WebAutoScalingGroup
+
+    
+## IAM Role for instances - actually not being used at the moment
+## The launch template currently has a reference to a pre-configured IAM role
   ServerRole:
     Type: AWS::IAM::Role
     Properties:
@@ -438,42 +503,6 @@ Resources:
       Roles:
         - !Ref ServerRole
 
-## CloudWatch - Sample Alarms created explicitly
-
-  AlbCPUAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: CPU alarm for EC2 Instances in ALB
-      # AlarmActions:
-      # - Ref: "logical name of an AWS::SNS::Topic resource"
-      MetricName: CPUUtilization
-      Namespace: AWS/EC2
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 2
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: LoadBalancer 
-          Value: !GetAtt WebLoadBalancer.LoadBalancerFullName
-
-  AlbPktInAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: Packets In Alarm for EC2 Instances in ALB
-      # AlarmActions:
-      # - Ref: "logical name of an AWS::SNS::Topic resource"
-      MetricName: NetworkPacketsIn
-      Namespace: AWS/EC2
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 100
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: LoadBalancer 
-          Value: !Ref WebLoadBalancer
-          # Value: !GetAtt WebLoadBalancer.LoadBalancerFullName
 
 Outputs:   
   LoadBalancerUrl:
