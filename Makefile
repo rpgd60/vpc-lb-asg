@@ -113,10 +113,10 @@ lb-url:
 	@aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile ${Profile}
 
 test-lb:
-	@echo "Run command bash ./test.alb.sh"
+	@echo "Run command:  bash ./test.alb.sh <project-name>"
 
 stress-lb:
-	@echo "Run command bash ./stress.alb.sh"
+	@echo "Run command:  bash ./stress.alb.sh <project-name>"
 
 del-iam:
 	@read -p "Are you sure that you want to destroy stack '${IamStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
