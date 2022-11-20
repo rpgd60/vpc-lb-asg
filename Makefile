@@ -147,21 +147,33 @@ s3:
 	@aws s3 cp asg-lb.yaml ${S3FullPath}/vpc-endpoints.yaml --profile ${Profile}
 	@aws s3 cp Makefile ${S3FullPath}/Makefile --profile ${Profile}
 
-# tear-down:
-# 	@read -p "Are you sure that you want to destroy stack '${Project}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
-# 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${Project}-vpc" --profile ${Profile}
+tear-down:
+## Attempt to remove all in one shot -  NEEDS work - Always verify
+## Useful to launch and go for a coffee
+	@read -p "Are you sure that you want to destroy all stacks from project '${Project}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
+	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${VpcEndpointStackName}" --profile ${Profile}
+	sleep 60
+	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgLbStackName}" --profile ${Profile}
+	sleep 300
+	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${VpcStackName}" --profile ${Profile}
+	sleep 300
+
+
+
 
 clean:
-	@rm -fr temp/
-	@rm -fr dist/
-	@rm -fr htmlcov/
-	@rm -fr site/
-	@rm -fr .eggs/
-	@rm -fr .tox/
-	@find . -name '*.egg-info' -exec rm -fr {} +
+	@echo - Nothing to do for the time being
 	@find . -name '.DS_Store' -exec rm -fr {} +
-	@find . -name '*.egg' -exec rm -f {} +
-	@find . -name '*.pyc' -exec rm -f {} +
-	@find . -name '*.pyo' -exec rm -f {} +
-	@find . -name '*~' -exec rm -f {} +
-	@find . -name '__pycache__' -exec rm -fr {} +
+#	@rm -fr temp/
+#	@rm -fr htmlcov/
+#	@rm -fr dist/
+#	@rm -fr site/
+#	@rm -fr .eggs/
+#	@rm -fr .tox/
+#	@find . -name '*.egg-info' -exec rm -fr {} +
+#	@find . -name '.DS_Store' -exec rm -fr {} +
+#	@find . -name '*.egg' -exec rm -f {} +
+#	@find . -name '*.pyc' -exec rm -f {} +
+#	@find . -name '*.pyo' -exec rm -f {} +
+#	@find . -name '*~' -exec rm -f {} +
+#	@find . -name '__pycache__' -exec rm -fr {} +
