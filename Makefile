@@ -148,7 +148,7 @@ s3:
 	@aws s3 cp Makefile ${S3FullPath}/Makefile --profile ${Profile}
 
 tear-down:
-## Attempt to remove all in one shot -  NEEDS work - Always verify
+## Attempt to remove all in one shot -  NEEDS work - Always verify that stuff was deleted
 ## Useful to launch and go for a coffee
 	@read -p "Are you sure that you want to destroy all stacks from project '${Project}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${VpcEndpointStackName}" --profile ${Profile}
@@ -156,14 +156,11 @@ tear-down:
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgLbStackName}" --profile ${Profile}
 	sleep 300
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${VpcStackName}" --profile ${Profile}
-	sleep 300
-
-
 
 
 clean:
-	@echo - Nothing to do for the time being
-	@find . -name '.DS_Store' -exec rm -fr {} +
+	@echo Not much to do for the time being
+	find . -name '.DS_Store' -exec rm -fr {} +
 #	@rm -fr temp/
 #	@rm -fr htmlcov/
 #	@rm -fr dist/

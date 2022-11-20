@@ -36,23 +36,31 @@ Normally we include the Project as a parameter when calling make.
 `make Project=acme vpc` 
 
 - Create VPC overriding some parameters
+
 `make  Project=acme CreateNatGateways=false  CreateBastion=false vpc`
 `make Project=acme44 VpcCIDR="10.44.0.0/16" CreateNatGateways=false vpc`
 
 - Create ASG and ALB  (Stack linked to VPC stack - must be run after creating VPC)
+
 `make Project=acme asg`
+
 - ASG with Target Autoscaling   (use 'false' to disable)
+
 `make Project=acme TargetAutoscaling=true asg`
 
 
 - Create VPC Endpoints - must be run after creating VPC
+
 `make Project=acme vpc-endpoints`
 
 
 ## Testing and 'stressing' the ALB / ASG
 
 Running `make lb-url` gets the DNS Name associated with the Application Load Balancer
-
+```
+$ make Project=acme lb-url
+http://dev-alb-3453634523.eu-west-1.elb.amazonaws.com/
+```
 This is called by two simple bash scripts to test the LB connectivity using curl.
 
 test.alb.sh  -  sends HTTP requests to  the ALB at one second intervals
