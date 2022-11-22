@@ -8,22 +8,22 @@ Uses Makefile to launch AWS CLI cloudformation commands
 - The templates in this repo will create resourses OUTSIDE of the free tier.  You can incur siginificant AWS charges
 
 At the moment only the vpc.yaml template has been tested more or less thoroughly
-The asg-lb.yaml template is work in progress
-VPC Endpoints are created but do not seem to work at the moment (at leaset for SSM Session Manager)
+The asg-lb.yaml template is work in progress -- pending dynamic scaling issues
+VPC Endpoints are created but do not seem to work at the moment (at least for SSM Session Manager)
 
 
 ## Stack Names
 Stack Names are based on "Project" and "Environment" names.  
-Setting Project to "acme"  and Environment to "dev" will create stacks
-- acme-iam-dev
-- acme-vpc-dev
-- acme-vpce-dev  (vpc endpoints)
-- acme-asg-dev
+Setting variables Project to "acme"  and Environment to "dev" will create stacks
+- acme-dev-iam
+- acme-dev-vpc
+- acme-dev-vpce  (vpc endpoints)
+- acme-dev-asg
 
 
 
 ## Example Usage
-Normally we include the Project as a parameter when calling make.
+Normally we include the Project (e.g. "acme") and the Environment (e.g. "dev") as a parameter when calling make.
 
 - Create VPC with default values for parameters  (stack:  acme-vpc)
 `make Project=acme Environment=dev vpc` 
