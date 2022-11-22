@@ -49,17 +49,22 @@ Normally we include the Project as a parameter when calling make.
 
 ## Testing and 'stressing' the ALB / ASG
 
-Running `make lb-url` gets the DNS Name associated with the Application Load Balancer
+Running `make Project=xxxx Environment=yyyy lb-url` gets the DNS Name associated with the Application Load Balancer
 ```
-$ make Project=acme lb-url
-http://dev-alb-3453634523.eu-west-1.elb.amazonaws.com/
+$ make Project=acme Environment=dev lb-url 
+http://acme-dev-18912225448.eu-west-1.elb.amazonaws.com/
 ```
-This is called by two simple bash scripts to test the LB connectivity using curl.
+This make command is called by two simple bash scripts to test the LB connectivity using curl.
 
 test.alb.sh  -  sends HTTP requests to  the ALB at one second intervals
+call as :   bash ./test.alb.sh <project> <environment> 
+
 ```
 ## Simple script to test the LB / ASG 
-LB_URL=$(make lb-url)
+## Must use the project name as parameter to this script
+## TODO: enforce parameter
+
+LB_URL=$(make Project=$1 Environment=$2 lb-url)
 echo $LB_URL
 curl $LB_URL
 while sleep 1;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
@@ -69,11 +74,16 @@ while sleep 1;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, 
 stress.alb.sh - blasts the ALB with a quick succession of HTTP requests.  
 Does not really stress the CPU, but it can be used to test a Target Tracking autoscaling policy based on LB requests per target (ALBRequestCountPerTarget)
 
+call as :   bash ./stress.alb.sh <project> <environment> 
 ```
-## Simple script to stress the LB / ASG 
-LB_URL=$(make lb-url)
+## Simple script to "stress" the LB / ASG f
+## Use at your own risk
+## Must use the project name as parameter to this script
+## TODO: enforce parameter
+
+LB_URL=$(make Project=$1 Environment=$2 lb-url)
 echo $LB_URL
 curl $LB_URL
-while sleep 1;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
+while true;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
 ```
 
