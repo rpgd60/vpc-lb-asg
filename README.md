@@ -13,45 +13,38 @@ VPC Endpoints are created but do not seem to work at the moment (at leaset for S
 
 
 ## Stack Names
-Stack Names are based on "Project" name.  Setting project to "acme" will create stacks
-- acme-iam
-- acme-vpc
-- acme-vpce  (vpc endpoints)
-- acme-asg 
+Stack Names are based on "Project" and "Environment" names.  
+Setting Project to "acme"  and Environment to "dev" will create stacks
+- acme-iam-dev
+- acme-vpc-dev
+- acme-vpce-dev  (vpc endpoints)
+- acme-asg-dev
 
-(
-    TODO:  explore including Environment parameter in stack name
 
-    Example  -  Project "acme" and Environment "prod" will create stacks:
-        acme-prod-vpc
-        acme-prod-asg
-        acme-prod-vpce
-        ...
-)
 
 ## Example Usage
 Normally we include the Project as a parameter when calling make.
 
 - Create VPC with default values for parameters  (stack:  acme-vpc)
-`make Project=acme vpc` 
+`make Project=acme Environment=dev vpc` 
 
 - Create VPC overriding some parameters
 
-`make  Project=acme CreateNatGateways=false  CreateBastion=false vpc`
-`make Project=acme44 VpcCIDR="10.44.0.0/16" CreateNatGateways=false vpc`
+`make  Project=acme  Environment=test CreateNatGateways=false  CreateBastion=false vpc`
+`make Project=acme44 Environment=dev VpcCIDR="10.44.0.0/16" CreateNatGateways=false vpc`
 
 - Create ASG and ALB  (Stack linked to VPC stack - must be run after creating VPC)
 
-`make Project=acme asg`
+`make Project=acme Environment=dev asg`
 
 - ASG with Target Autoscaling   (use 'false' to disable)
 
-`make Project=acme TargetAutoscaling=true asg`
+`make Project=acme Environment=dev TargetAutoscaling=true asg`
 
 
 - Create VPC Endpoints - must be run after creating VPC
 
-`make Project=acme vpc-endpoints`
+`make Project=acme Environment=dev vpc-endpoints`
 
 
 ## Testing and 'stressing' the ALB / ASG

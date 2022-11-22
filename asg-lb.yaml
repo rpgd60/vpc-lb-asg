@@ -5,7 +5,6 @@ Description:  Create Launch Template, ASG and ALB
 
 ### ------------ Parameters  ----------------    
 
-
 Parameters:
   Project:
     Description: Project Name prefixed to resource names
@@ -30,7 +29,6 @@ Parameters:
     MinLength: 1
     MaxLength: 255
     AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
-    # Default: base-network
 
   TargetAutoScaling:
     Description: Enable Target Autoscaling
@@ -39,8 +37,6 @@ Parameters:
     AllowedValues:
       - "true"
       - "false"    
-
-
 
   ## Web Server - Launch Template
   WebAmiId:
@@ -96,7 +92,7 @@ Resources:
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub ${Environment}-lb-sg 
+      # GroupName: !Sub ${Project}-${Environment}-lb-sg 
       GroupDescription: Security Group for Load Balancer
       VpcId: 
         Fn::ImportValue:
@@ -175,18 +171,18 @@ Resources:
   WebTargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
+      Name: !Sub ${Project}-${Environment}
       HealthCheckEnabled: true
       HealthCheckIntervalSeconds: 10  # def 30
       HealthCheckPath: "/"
       HealthCheckProtocol: "HTTP"
       HealthCheckPort: "traffic-port"
       HealthCheckTimeoutSeconds: 5    # def 5 for HTTP
-      HealthyThresholdCount: 2        # def 5 for HTTP, HTTPS
+      HealthyThresholdCount: 5        # def 5 for HTTP, HTTPS
       # IpAddressType: "String"       # Not currently supported by CloudFormation
       Matcher: 
         HttpCode: "200"
       #   GrpcCode: "String"
-      Name: !Sub ${Environment}-webtg1
       Port: 80
       Protocol: "HTTP"
       # ProtocolVersion: "String"
@@ -208,7 +204,7 @@ Resources:
           Value: "0"
         - 
           Key: "load_balancing.algorithm.type"
-          Value: "round_robin"    # (default) alternative : least_outstanding_requests
+          Value: "round_robin"    # (default) The alternative : least_outstanding_requests
       # TargetType: "String"
       # Targets:
       #   Targets
@@ -224,13 +220,10 @@ Resources:
         - Key: application
           Value: !Sub ${AppName}-${Environment}
 
-
-
-
   WebLoadBalancer:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties:
-        Name: !Sub ${Project}-${Environment}-alb
+        Name: !Sub ${Project}-${Environment}
         Scheme: "internet-facing"
         Type: "application"
         Subnets: 
@@ -261,7 +254,7 @@ Resources:
           - Key: environment
             Value: !Sub ${Environment}
           - Key: Name
-            Value: !Sub ${Project}-${Environment}-alb
+            Value: !Sub ${Project}-${Environment}
 
   HTTPlistener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
@@ -276,9 +269,8 @@ Resources:
 
   WebLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
-    # DependsOn: [NatGateway1, NatGateway2]  # For user-data : for the time being requires outgoing internet access. TODO - baked AMI
     Properties:
-      LaunchTemplateName: !Sub ${Environment}-web-server
+      LaunchTemplateName: !Sub ${Project}-${Environment}-${AppName}
       LaunchTemplateData:
         ## Gotcha : see https://stackoverflow.com/questions/53854184/cloudformation-launchtemplate-referencing-iaminstanceprofile-fails-to-create#54292081
         IamInstanceProfile: 
@@ -297,7 +289,7 @@ Resources:
               yum install -y httpd
               systemctl start httpd
               systemctl enable httpd
-              echo "Cfn Stack: ${AWS::StackName} - Host: $(hostname -f)" > /var/www/html/index.html
+              echo "Stack: ${AWS::StackName} - Host: $(hostname -f)" > /var/www/html/index.html
       # TODO - FIX BELOW
         TagSpecifications:  
           - 
@@ -306,14 +298,20 @@ Resources:
             - Key: Name
               Value: !Sub ${Project}-${Environment}-${AppName}
             - Key: disposable
-              Value: 'false'
-            - Key: app
-              Value: !Ref AppName   
+              Value: false
+            - Key: App
+              Value: !Ref AppName
+            - Key: Environment 
+              Value: !Ref Environment
+            - Key: Project
+              Value: !Ref Project
+            - Key: Patch Group 
+              Value: !Ref Environment
 
   WebInstanceProfileForSsm:
     Type: AWS::IAM::InstanceProfile
     Properties: 
-      InstanceProfileName: !Sub '${Environment}-ssm'
+      InstanceProfileName: !Sub '${Project}-${Environment}-ssm'
       Path: /
       Roles: [!Ref RoleForSsm] 
 
@@ -366,7 +364,8 @@ Resources:
           PropagateAtLaunch: true
             # Fn::GetAtt : [ "WebLaunchTemplate", "LatestVersionNumber" ]
 
-## Target Tracking Alarms
+## Target Tracking Scaling Policies
+## Based on CPU
   WebTargetTrackingCpu:
     Type: AWS::AutoScaling::ScalingPolicy
     Condition: AutoScalingTargetTrackingCondition
@@ -377,26 +376,27 @@ Resources:
         DisableScaleIn: true
         PredefinedMetricSpecification: 
           PredefinedMetricType: ASGAverageCPUUtilization
-        TargetValue: 70
+        TargetValue: 80
 
-  WebTargetTrackingLoadBalancerRequests:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Condition: AutoScalingTargetTrackingCondition
-    Properties: 
-      PolicyType: TargetTrackingScaling
-      AutoScalingGroupName: !Ref WebAutoScalingGroup  
-      TargetTrackingConfiguration: 
-        DisableScaleIn: false
-        PredefinedMetricSpecification: 
-          PredefinedMetricType: ALBRequestCountPerTarget
-          # ResourceLabel:  !Join 
-          #   - '/' 
-          #   - - !GetAtt WebLoadBalancer.LoadBalancerFullName
-          #     - !GetAtt WebTargetGroup1.TargetGroupFullName
-          ResourceLabel:  !Join ['/', 
-              [!GetAtt WebLoadBalancer.LoadBalancerFullName, 
-                !GetAtt WebTargetGroup1.TargetGroupFullName]]
-        TargetValue: 80 
+# ## Based on Load Balancer requests per instance
+#   WebTargetTrackingLoadBalancerRequests:
+#     Type: AWS::AutoScaling::ScalingPolicy
+#     Condition: AutoScalingTargetTrackingCondition
+#     Properties: 
+#       PolicyType: TargetTrackingScaling
+#       AutoScalingGroupName: !Ref WebAutoScalingGroup  
+#       TargetTrackingConfiguration: 
+#         DisableScaleIn: false
+#         PredefinedMetricSpecification: 
+#           PredefinedMetricType: ALBRequestCountPerTarget
+#           # ResourceLabel:  !Join 
+#           #   - '/' 
+#           #   - - !GetAtt WebLoadBalancer.LoadBalancerFullName
+#           #     - !GetAtt WebTargetGroup1.TargetGroupFullName
+#           ResourceLabel:  !Join ['/', 
+#               [!GetAtt WebLoadBalancer.LoadBalancerFullName, 
+#                 !GetAtt WebTargetGroup1.TargetGroupFullName]]
+#         TargetValue: 80 
 
 ## Time based Autoscaling Actions
 
@@ -426,15 +426,16 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmDescription: CPU alarm for EC2 Instances in ASG
-      AlarmName: CPU Utilization for ASG EC2 Instances
+      AlarmName: !Sub ${Project}-${Environment}-CPU Utilization 
       # AlarmActions:
       # - Ref: "logical name of an AWS::SNS::Topic resource"
       MetricName: CPUUtilization
       Namespace: AWS/EC2
       Statistic: Average
       Period: 300
-      EvaluationPeriods: 1
-      Threshold: 2
+      DatapointsToAlarm: 2
+      EvaluationPeriods: 3
+      Threshold: 75
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: AutoScalingGroupName
@@ -444,15 +445,16 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmDescription: PacketsIn Alarm for EC2 Instances in ASG
-      AlarmName: PacketsIn for ASG EC2 Instances
+      AlarmName: !Sub ${Project}-${Environment}-PacketsIn      
       # AlarmActions:
       # - Ref: "logical name of an AWS::SNS::Topic resource"
       MetricName: NetworkPacketsIn
       Namespace: AWS/EC2
       Statistic: Average
       Period: 300
-      EvaluationPeriods: 1
-      Threshold: 400
+      DatapointsToAlarm: 2
+      EvaluationPeriods: 3
+      Threshold: 1000
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: AutoScalingGroupName
@@ -462,15 +464,16 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmDescription: PacketsOut Alarm for EC2 Instances in ASG
-      AlarmName: PacketsOut for ASG EC2 Instances
+      AlarmName: !Sub ${Project}-${Environment}-PacketsOut    
       # AlarmActions:
       # - Ref: "logical name of an AWS::SNS::Topic resource"
       MetricName: NetworkPacketsOut
       Namespace: AWS/EC2
       Statistic: Average
       Period: 300
-      EvaluationPeriods: 1
-      Threshold: 400
+      DatapointsToAlarm: 2      
+      EvaluationPeriods: 3
+      Threshold: 1000
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: AutoScalingGroupName

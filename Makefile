@@ -15,21 +15,20 @@ help:
 ###################### Parameters ######################
 Description ?= VPC and ASG with LB
 # CFN Stack Parameters
-AppName ?= blog
+AppName ?= app1
 Project ?= xxxx
 Environment ?= dev
 # VPC Parameters
-CreateNatGateways ?= false
+CreateNatGateways ?= true
 CreateBastion ?= false
 VpcCIDR ?= "10.200.0.0/16"
 
 ## Stack Names - we get stack name from Project
-VpcStackName ?= ${Project}-vpc
-IamStackName ?= ${Project}-iam
-VpcStackName ?= ${Project}-vpc
-VpcEndpointStackName ?= ${Project}-vpce
-AsgLbStackName ?= ${Project}-asg
-TestStackName ?= ${Project}-test-ec2
+IamStackName ?= ${Project}-${Environment}-iam
+VpcStackName ?= ${Project}-${Environment}-vpc
+VpcEndpointStackName ?= ${Project}-${Environment}-vpce
+AsgLbStackName ?= ${Project}-${Environment}-asg
+TestStackName ?= ${Project}-${Environment}-test-ec2
 
 
 
@@ -113,10 +112,10 @@ lb-url:
 	@aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile ${Profile}
 
 test-lb:
-	@echo "Run command:  bash ./test.alb.sh <project-name>"
+	@echo "Run command:  bash ./test.alb.sh <project-name> <environment>"
 
 stress-lb:
-	@echo "Run command:  bash ./stress.alb.sh <project-name>"
+	@echo "Run command:  bash ./stress.alb.sh <project-name> <environment>"
 
 del-iam:
 	@read -p "Are you sure that you want to destroy stack '${IamStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]

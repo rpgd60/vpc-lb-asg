@@ -13,7 +13,7 @@ Parameters:
   Project:
     Description: Project Name prefixed to resource names
     Type: String
-    Default: "acme999"
+    Default: "acme"
 
   Environment:
     Description: Environment name (e.g. dev, test, prod)
@@ -114,7 +114,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Ref Project
+          Value: !Sub ${Project}-${Environment}
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -319,7 +319,7 @@ Resources:
   HttpSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      # GroupName: "http-sg"   -- problems when doing stack updates
+      # GroupName: "http-sg"   -- TODO check problems when doing stack updates
       GroupDescription: "Simple security Group for test server in private subnet"
       VpcId: !Ref VPC
       SecurityGroupIngress:
