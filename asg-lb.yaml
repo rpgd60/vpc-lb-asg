@@ -364,39 +364,39 @@ Resources:
           PropagateAtLaunch: true
             # Fn::GetAtt : [ "WebLaunchTemplate", "LatestVersionNumber" ]
 
-## Target Tracking Scaling Policies
-## Based on CPU
-  WebTargetTrackingCpu:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Condition: AutoScalingTargetTrackingCondition
-    Properties: 
-      PolicyType: TargetTrackingScaling
-      AutoScalingGroupName: !Ref WebAutoScalingGroup  
-      TargetTrackingConfiguration: 
-        DisableScaleIn: true
-        PredefinedMetricSpecification: 
-          PredefinedMetricType: ASGAverageCPUUtilization
-        TargetValue: 80
-
-# ## Based on Load Balancer requests per instance
-#   WebTargetTrackingLoadBalancerRequests:
+# ## Target Tracking Scaling Policies
+# ## Based on CPU
+#   WebTargetTrackingCpu:
 #     Type: AWS::AutoScaling::ScalingPolicy
 #     Condition: AutoScalingTargetTrackingCondition
 #     Properties: 
 #       PolicyType: TargetTrackingScaling
 #       AutoScalingGroupName: !Ref WebAutoScalingGroup  
 #       TargetTrackingConfiguration: 
-#         DisableScaleIn: false
+#         DisableScaleIn: true
 #         PredefinedMetricSpecification: 
-#           PredefinedMetricType: ALBRequestCountPerTarget
-#           # ResourceLabel:  !Join 
-#           #   - '/' 
-#           #   - - !GetAtt WebLoadBalancer.LoadBalancerFullName
-#           #     - !GetAtt WebTargetGroup1.TargetGroupFullName
-#           ResourceLabel:  !Join ['/', 
-#               [!GetAtt WebLoadBalancer.LoadBalancerFullName, 
-#                 !GetAtt WebTargetGroup1.TargetGroupFullName]]
-#         TargetValue: 80 
+#           PredefinedMetricType: ASGAverageCPUUtilization
+#         TargetValue: 80
+
+## Based on Load Balancer requests per instance
+  WebTargetTrackingLoadBalancerRequests:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Condition: AutoScalingTargetTrackingCondition
+    Properties: 
+      PolicyType: TargetTrackingScaling
+      AutoScalingGroupName: !Ref WebAutoScalingGroup  
+      TargetTrackingConfiguration: 
+        DisableScaleIn: false
+        PredefinedMetricSpecification: 
+          PredefinedMetricType: ALBRequestCountPerTarget
+          # ResourceLabel:  !Join 
+          #   - '/' 
+          #   - - !GetAtt WebLoadBalancer.LoadBalancerFullName
+          #     - !GetAtt WebTargetGroup1.TargetGroupFullName
+          ResourceLabel:  !Join ['/', 
+              [!GetAtt WebLoadBalancer.LoadBalancerFullName, 
+                !GetAtt WebTargetGroup1.TargetGroupFullName]]
+        TargetValue: 80 
 
 ## Time based Autoscaling Actions
 
@@ -454,7 +454,7 @@ Resources:
       Period: 300
       DatapointsToAlarm: 2
       EvaluationPeriods: 3
-      Threshold: 1000
+      Threshold: 100
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: AutoScalingGroupName
@@ -473,7 +473,7 @@ Resources:
       Period: 300
       DatapointsToAlarm: 2      
       EvaluationPeriods: 3
-      Threshold: 1000
+      Threshold: 100
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: AutoScalingGroupName
