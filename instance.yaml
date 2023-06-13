@@ -65,7 +65,7 @@ Resources:
       SubnetId:
         Fn::ImportValue:
           !Sub ${VpcStackName}-PrivateSubnet1
-      IamInstanceProfile: !Ref InstanceProfileForSsm
+      IamInstanceProfile: !Ref InstInstanceProfile
       Tags:
         - Key: Name
           Value: !Sub ${Project}-${EnvironmentName}-priv
@@ -75,46 +75,63 @@ Resources:
           Value: 'true'
 
 
-  ServerInstancePub:
-    Type: AWS::EC2::Instance
-    Properties:
-      DisableApiTermination: false
-      # IamInstanceProfile: "String"
-      ImageId: !Ref ServerAmiId
-      InstanceType: !Ref ServerInstanceType
-      ## KeyName: !Ref BastionKeyName
-      SecurityGroupIds:
-        - 
-          Fn::ImportValue:
-            !Sub ${VpcStackName}-HttpSecurityGroup
-      SubnetId:
-        Fn::ImportValue:
-          !Sub ${VpcStackName}-PublicSubnet1
-      IamInstanceProfile: !Ref InstanceProfileForSsm
-      Tags:
-        - Key: Name
-          Value: !Sub ${Project}-${EnvironmentName}-pub
-        - Key: disposable
-          Value: 'true'
-        - Key: app
-          Value: !Ref AppName          
-      UserData:
-        Fn::Base64: 
-          !Sub |
-            #!/bin/bash
-            yum update -y
-            yum install -y httpd
-            systemctl start httpd
-            systemctl enable httpd
-            echo "Cfn Stack: ${AWS::StackName} - Host: $(hostname -f)" > /var/www/html/index.html
+  # ServerInstancePub:
+  #   Type: AWS::EC2::Instance
+  #   Properties:
+  #     DisableApiTermination: false
+  #     # IamInstanceProfile: "String"
+  #     ImageId: !Ref ServerAmiId
+  #     InstanceType: !Ref ServerInstanceType
+  #     ## KeyName: !Ref BastionKeyName
+  #     SecurityGroupIds:
+  #       - 
+  #         Fn::ImportValue:
+  #           !Sub ${VpcStackName}-HttpSecurityGroup
+  #     SubnetId:
+  #       Fn::ImportValue:
+  #         !Sub ${VpcStackName}-PublicSubnet1
+  #     IamInstanceProfile: !Ref InstInstanceProfile
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub ${Project}-${EnvironmentName}-pub
+  #       - Key: disposable
+  #         Value: 'true'
+  #       - Key: app
+  #         Value: !Ref AppName          
+  #     UserData:
+  #       Fn::Base64: 
+  #         !Sub |
+  #           #!/bin/bash
+  #           yum update -y
+  #           yum install -y httpd
+  #           systemctl start httpd
+  #           systemctl enable httpd
+  #           echo "Cfn Stack: ${AWS::StackName} - Host: $(hostname -f)" > /var/www/html/index.html
   
-  InstanceProfileForSsm:
+  InstInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties: 
-      InstanceProfileName: !Sub ${EnvironmentName}-ssm
+      InstanceProfileName: !Sub testserver-${EnvironmentName}-ssm
       Path: /
       Roles:
-        -
-          Fn::ImportValue:
-            !Sub ${IamStackName}-SSMRole
+        - !Ref InstServerRole
+
+  InstServerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ["-", ["inst", !Ref "AWS::StackName", "SSMRole"]]
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+
 

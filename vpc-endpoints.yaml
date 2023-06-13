@@ -21,6 +21,8 @@ Parameters:
     Type: String
     Default: "acme999"
 
+    
+
 ### ---------------------------- Resources - VPC Endpoints ----------------    
 Resources:
   VPCEndPointSG:
@@ -36,6 +38,11 @@ Resources:
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
+        SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0        
         Tags:
         - Key: Name
           Value: !Sub ${Project}-vpce

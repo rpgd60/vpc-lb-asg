@@ -480,8 +480,6 @@ Resources:
           Value: !Ref WebAutoScalingGroup
 
     
-## IAM Role for instances - actually not being used at the moment
-## The launch template currently has a reference to a pre-configured IAM role
   ServerRole:
     Type: AWS::IAM::Role
     Properties:

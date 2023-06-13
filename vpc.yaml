@@ -60,12 +60,13 @@ Parameters:
     AllowedValues:
       - t2.micro
       - t2.nano
+      - t3.micro
     Default: t2.micro
 
   BastionKeyName:
     Description:  Key pair name for Bastion Host
     Type: AWS::EC2::KeyPair::KeyName
-    Default: "mkeyireland1"
+    Default: "mkeyireland2"
 
   BastionSSHRangeAllow:
     Description: The IP address range that can be used to SSH to the EC2 instances

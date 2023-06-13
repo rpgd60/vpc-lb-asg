@@ -87,3 +87,7 @@ curl $LB_URL
 while true;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
 ```
 
+## Stressing CPU with SSM RunCommand 
+(TODO - change to using tags to select instances)
+
+

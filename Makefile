@@ -16,10 +16,10 @@ help:
 Description ?= VPC and ASG with LB
 # CFN Stack Parameters
 AppName ?= app1
-Project ?= xxxx
+Project ?= pepe
 Environment ?= dev
 # VPC Parameters
-CreateNatGateways ?= true
+CreateNatGateways ?= false
 CreateBastion ?= false
 VpcCIDR ?= "10.200.0.0/16"
 
@@ -33,7 +33,8 @@ TestStackName ?= ${Project}-${Environment}-test-ec2
 
 
 TargetAutoScaling ?= "true"
-S3FullPath ?= "s3://rp-demo1/cfn/vpc-lb-asg"
+## S3FullPath ?= "s3://rp-demo1/aws/autoscaling/fulldemo"
+S3FullPath ?= "s3://demos-2023-rp/cfn/autoscaling"
 LocalAWSRegion ?= eu-west-1
 Profile ?= course
 
@@ -95,13 +96,13 @@ asg:
 		--profile ${Profile}
 test-ec2:
 	aws cloudformation deploy \
-		--template-file ./test-instance.yaml \
+		--template-file ./instance.yaml \
 		--region ${LocalAWSRegion} \
 		--stack-name ${TestStackName} \
 		--parameter-overrides \
 			AppName=${AppName} \
 			Project=${Project}\
-			Environment=test
+			Environment=${Environment} \
 			VpcStackName=${VpcStackName}\
 			IamStackName=${IamStackName}\
 		--no-fail-on-empty-changeset \
