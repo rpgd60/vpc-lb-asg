@@ -15,8 +15,8 @@ help:
 ###################### Parameters ######################
 Description ?= VPC and ASG with LB
 # CFN Stack Parameters
-AppName ?= app1
-Project ?= pepe
+AppName ?= app3
+Project ?= pluto
 Environment ?= dev
 # VPC Parameters
 CreateNatGateways ?= false
