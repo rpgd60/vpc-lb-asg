@@ -35,8 +35,8 @@ TestStackName ?= ${Project}-${Environment}-test-ec2
 TargetAutoScaling ?= "true"
 ## S3FullPath ?= "s3://rp-demo1/aws/autoscaling/fulldemo"
 S3FullPath ?= "s3://demos-2023-rp/cfn/autoscaling"
-LocalAWSRegion ?= eu-west-1
-Profile ?= course
+LocalAWSRegion ?= eu-south-2 ## eu-west-1
+Profile ?= madmin
 
 #######################################################
 iam:
