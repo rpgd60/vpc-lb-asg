@@ -6,4 +6,5 @@
 LB_URL=$(make Project=$1 Environment=$2 lb-url)
 echo $LB_URL
 curl $LB_URL
-while true;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
+# while true;  do curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $LB_URL ; done
+ab -n 1000 -c 10 $LB_URL
