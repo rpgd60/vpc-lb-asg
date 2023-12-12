@@ -10,6 +10,8 @@ help:
 	@echo "	asg - deploy ALB and ASG - requires deploying VPC first"
 	@echo "	lb-url - show the URL of ALB"
 	@echo "	del-asg - delete ALB and ASG" 
+	@echo "	test-lb - Verify connectivity" 
+	@echo "	stress-lb - attempt to trigger autoscaling" 
 
 
 ###################### Parameters ######################
@@ -39,6 +41,8 @@ LocalAWSRegion ?= eu-south-2 ## eu-west-1
 Profile ?= madmin
 
 #######################################################
+all:  iam vpc vpc-endpoints asg
+
 iam:
 	aws cloudformation deploy \
 		--template-file ./iam.yaml \
@@ -49,7 +53,8 @@ iam:
 			Environment=${Environment} \
 		--no-fail-on-empty-changeset \
 		--capabilities CAPABILITY_NAMED_IAM \
-		--profile ${Profile}
+		--profile ${Profile} \
+		--region ${LocalAWSRegion}
 
 vpc:
 	aws cloudformation deploy \
@@ -63,7 +68,8 @@ vpc:
 			CreateBastion=${CreateBastion} \
 			VpcCIDR=${VpcCIDR} \
 		--no-fail-on-empty-changeset \
-		--profile ${Profile}
+		--profile ${Profile} \
+		--region ${LocalAWSRegion}
 
 
 vpc-endpoints: 
@@ -78,7 +84,8 @@ vpc-endpoints:
 			VpcStackName=${VpcStackName}\
 		--no-fail-on-empty-changeset \
 		--capabilities CAPABILITY_NAMED_IAM \
-		--profile ${Profile}
+		--profile ${Profile} \
+		--region ${LocalAWSRegion}
 
 asg:
 	aws cloudformation deploy \
@@ -93,7 +100,8 @@ asg:
 			TargetAutoScaling=${TargetAutoScaling} \
 		--no-fail-on-empty-changeset \
 		--capabilities CAPABILITY_NAMED_IAM \
-		--profile ${Profile}
+		--profile ${Profile} \
+		--region ${LocalAWSRegion}
 test-ec2:
 	aws cloudformation deploy \
 		--template-file ./instance.yaml \
@@ -107,10 +115,11 @@ test-ec2:
 			IamStackName=${IamStackName}\
 		--no-fail-on-empty-changeset \
 		--capabilities CAPABILITY_NAMED_IAM \
-		--profile ${Profile}
+		--profile ${Profile} \
+		--region ${LocalAWSRegion}
 
 lb-url:
-	@aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile ${Profile}
+	@aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile ${Profile} --region ${LocalAWSRegion}
 
 test-lb:
 	@echo "Run command:  bash ./test.alb.sh <project-name> <environment>"
