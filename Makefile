@@ -19,11 +19,11 @@ Description ?= VPC and ASG with LB
 # CFN Stack Parameters
 AppName ?= app3
 Project ?= pluto
-Environment ?= dev
+Environment ?= maq
 # VPC Parameters
-CreateNatGateways ?= false
+CreateNatGateways ?= true
 CreateBastion ?= false
-VpcCIDR ?= "10.200.0.0/16"
+VpcCIDR ?= "10.100.0.0/16"
 
 ## Stack Names - we get stack name from Project
 IamStackName ?= ${Project}-${Environment}-iam
@@ -34,10 +34,10 @@ TestStackName ?= ${Project}-${Environment}-test-ec2
 
 
 
-TargetAutoScaling ?= "true"
+TargetAutoScaling ?= "false"
 ## S3FullPath ?= "s3://rp-demo1/aws/autoscaling/fulldemo"
 S3FullPath ?= "s3://demos-2023-rp/cfn/autoscaling"
-LocalAWSRegion ?= eu-south-2 ## eu-west-1
+LocalAWSRegion ?= eu-west-1 ## eu-west-1
 Profile ?= madmin
 
 #######################################################
