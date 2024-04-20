@@ -21,7 +21,6 @@ Parameters:
     Type: String
     Default: "acme999"
 
-    
 
 ### ---------------------------- Resources - VPC Endpoints ----------------    
 Resources:
@@ -125,7 +124,6 @@ Resources:
         - Fn::ImportValue:
             !Sub ${VpcStackName}-PublicSubnet2
       PrivateDnsEnabled: False
-
 
 # The EC2 VPC endpoint isn't required for connecting the instance to Session Manager. 
 # The EC2 VPC endpoint is required to create VSS-enabled snapshots of the instance.
