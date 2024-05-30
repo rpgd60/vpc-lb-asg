@@ -31,13 +31,13 @@ VpcStackName ?= ${Project}-${Environment}-vpc
 VpcEndpointStackName ?= ${Project}-${Environment}-vpce
 AsgLbStackName ?= ${Project}-${Environment}-asg
 TestStackName ?= ${Project}-${Environment}-test-ec2
-
+BastionKeyName ?= demo-${LocalAWSRegion}
 
 
 TargetAutoScaling ?= "false"
 ## S3FullPath ?= "s3://rp-demo1/aws/autoscaling/fulldemo"
 S3FullPath ?= "s3://demos-2023-rp/cfn/autoscaling"
-LocalAWSRegion ?= eu-west-1 ## eu-west-1
+LocalAWSRegion ?= eu-south-2 ## eu-west-1
 Profile ?= madmin
 
 #######################################################
@@ -67,6 +67,7 @@ vpc:
 			CreateNatGateways=${CreateNatGateways} \
 			CreateBastion=${CreateBastion} \
 			VpcCIDR=${VpcCIDR} \
+			BastionKeyName=${BastionKeyName} \
 		--no-fail-on-empty-changeset \
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
