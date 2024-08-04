@@ -11,8 +11,8 @@ help:
 	@echo "	asg - deploy ALB and ASG - requires deploying VPC first"
 	@echo "	del-asg - delete ALB and ASG" 
 	@echo "	lb-url - show the URL of ALB"	
-	@echo "	test-lb - Verify connectivity" 
-	@echo "	stress-lb - attempt to trigger autoscaling" 
+	@echo "	lb-test - Verify connectivity" 
+	@echo "	lb-stress - attempt to trigger autoscaling" 
 
 
 ###################### Parameters ######################
@@ -24,7 +24,7 @@ Environment ?= dev
 LocalAWSRegion ?= eu-south-2 ## eu-west-1
 
 # VPC Parameters
-CreateNatGateways ?= true
+CreateNatGateways ?= false
 CreateBastion ?= false
 VpcCIDR ?= "10.200.0.0/16"
 
@@ -122,11 +122,16 @@ test-ec2:
 lb-url:
 	@aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile ${Profile} --region ${LocalAWSRegion}
 
-test-lb:
-	@echo "Run command:  bash ./test.alb.sh <project-name> <environment>"
-
-stress-lb:
-	@echo "Run command:  bash ./stress.alb.sh <project-name> <environment>"
+lb-test:
+	@LB_URL=$$(aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text --profile ${Profile} --region ${LocalAWSRegion}) && \
+	echo "Load Balancer URL: $$LB_URL" && \
+	while sleep 0.5; do \
+		curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $$LB_URL; \
+	done
+lb-stress:
+	@LB_URL=$$(aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text --profile ${Profile} --region ${LocalAWSRegion}) && \
+	echo "Load Balancer URL: $$LB_URL" && \
+	ab -n 100 -c 1 $$LB_URL
 
 del-iam:
 	@read -p "Are you sure that you want to destroy stack '${IamStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
