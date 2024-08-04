@@ -5,25 +5,28 @@ help:
 	@echo "${Project}"
 	@echo "${Description}"
 	@echo ""
+	@echo "	iam - deploy iam role for EC2 instances"
 	@echo "	vpc - deploy VPC"
 	@echo "	del-vpc - delete VPC"
 	@echo "	asg - deploy ALB and ASG - requires deploying VPC first"
-	@echo "	lb-url - show the URL of ALB"
 	@echo "	del-asg - delete ALB and ASG" 
+	@echo "	lb-url - show the URL of ALB"	
 	@echo "	test-lb - Verify connectivity" 
 	@echo "	stress-lb - attempt to trigger autoscaling" 
 
 
 ###################### Parameters ######################
-Description ?= VPC and ASG with LB
+Description ?= VPC and ASG with ALB
 # CFN Stack Parameters
 AppName ?= app3
-Project ?= pluto
-Environment ?= maq
+Project ?= p33
+Environment ?= dev
+LocalAWSRegion ?= eu-south-2 ## eu-west-1
+
 # VPC Parameters
 CreateNatGateways ?= true
 CreateBastion ?= false
-VpcCIDR ?= "10.100.0.0/16"
+VpcCIDR ?= "10.200.0.0/16"
 
 ## Stack Names - we get stack name from Project
 IamStackName ?= ${Project}-${Environment}-iam
@@ -32,13 +35,10 @@ VpcEndpointStackName ?= ${Project}-${Environment}-vpce
 AsgLbStackName ?= ${Project}-${Environment}-asg
 TestStackName ?= ${Project}-${Environment}-test-ec2
 BastionKeyName ?= demo-${LocalAWSRegion}
-
-
 TargetAutoScaling ?= "false"
 ## S3FullPath ?= "s3://rp-demo1/aws/autoscaling/fulldemo"
 S3FullPath ?= "s3://demos-2023-rp/cfn/autoscaling"
-LocalAWSRegion ?= eu-south-2 ## eu-west-1
-Profile ?= madmin
+Profile ?= rafaadmin
 
 #######################################################
 all:  iam vpc vpc-endpoints asg
