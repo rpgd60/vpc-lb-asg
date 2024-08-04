@@ -37,17 +37,19 @@ Parameters:
   ##  Server -
   ServerAmiId:
     Description: AMI ID for server
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    # Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2
+    Type: AWS::EC2::Image::Id
+
+    # Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    # # Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs
+    # Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2
 
   ServerInstanceType:
-    Description: Instance type for web servers
+    Description: Instance type for test server
     Type: String
     AllowedValues:
-      - t2.micro
-      - t2.nano
-    Default: t2.micro
+    - t4g.nano
+    - t4g.micro
+    Default: t4g.nano
 
 Resources:
   ServerInstance:
