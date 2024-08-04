@@ -192,7 +192,7 @@ Resources:
           Value: "false"
         - 
           Key: "deregistration_delay.timeout_seconds"
-          Value: "300"
+          Value: "60"
         # - 
         #   Key: "stickiness.type"
         #   Value: "lb_cookie"
@@ -234,6 +234,7 @@ Resources:
         SecurityGroups: 
           - !Ref LoadBalancerSecurityGroup
         IpAddressType: "ipv4"
+        # LoadBalancingAlgorithmType: "round_robin"
         LoadBalancerAttributes: 
           - 
             Key: "access_logs.s3.enabled"
