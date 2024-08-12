@@ -39,7 +39,8 @@ VpcCIDR ?= "10.200.0.0/16"
 IamStackName ?= ${Project}-${Environment}-iam
 VpcStackName ?= ${Project}-${Environment}-vpc
 VpcEndpointStackName ?= ${Project}-${Environment}-vpce
-AsgLbStackName ?= ${Project}-${Environment}-asg
+AsgAlbStackName ?= ${Project}-${Environment}-asg-alb
+AsgNlbStackName ?= ${Project}-${Environment}-asg-nlb
 TestStackName ?= ${Project}-${Environment}-test-ec2
 BastionKeyName ?= demo-${LocalAWSRegion}
 TargetAutoScaling ?= "false"
@@ -95,11 +96,29 @@ vpc-endpoints:
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
 
-asg:
+asg-alb:
 	aws cloudformation deploy \
-		--template-file ./asg-lb.yaml \
+		--template-file ./asg-alb.yaml \
 		--region ${LocalAWSRegion} \
-		--stack-name ${AsgLbStackName} \
+		--stack-name ${AsgAlbStackName} \
+		--parameter-overrides \
+			AppName=${AppName} \
+			Project=${Project} \
+			Environment=${Environment} \
+			VpcStackName=${VpcStackName} \
+			TargetAutoScaling=${TargetAutoScaling} \
+			WebAmiId=${WebAmiId} \
+			WebInstanceType=${WebInstanceType} \
+		--no-fail-on-empty-changeset \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--profile ${Profile} \
+		--region ${LocalAWSRegion}
+
+asg-nlb:
+	aws cloudformation deploy \
+		--template-file ./asg-nlb.yaml \
+		--region ${LocalAWSRegion} \
+		--stack-name ${AsgNlbStackName} \
 		--parameter-overrides \
 			AppName=${AppName} \
 			Project=${Project} \
@@ -161,17 +180,20 @@ del-test:
 	@read -p "Are you sure that you want to destroy stack '${TestStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${TestStackName}" --profile ${Profile}
 
-del-asg:
+del-asg-alb:
 	@read -p "Are you sure that you want to destroy stack '${AsgLbStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgLbStackName}" --profile ${Profile}
 
 s3:
+	aws s3 rm  ${S3FullPath}/ --recursive --profile ${Profile}
 	@aws s3 cp iam.yaml ${S3FullPath}/iam.yaml --profile ${Profile}
 	@aws s3 cp vpc.yaml ${S3FullPath}/vpc.yaml --profile ${Profile}
-	@aws s3 cp vpc.yaml ${S3FullPath}/test-instance.yaml --profile ${Profile}
-	@aws s3 cp asg-lb.yaml ${S3FullPath}/asg-lb.yaml --profile ${Profile}
-	@aws s3 cp asg-lb.yaml ${S3FullPath}/vpc-endpoints.yaml --profile ${Profile}
+	@aws s3 cp vpc-endpoints.yaml ${S3FullPath}/vpc-endpoints.yaml --profile ${Profile}
+	@aws s3 cp instance.yaml ${S3FullPath}/instance.yaml --profile ${Profile}
+	@aws s3 cp asg-alb.yaml ${S3FullPath}/asg-alb.yaml --profile ${Profile}
+	@aws s3 cp asg-nlb.yaml ${S3FullPath}/asg-nlb.yaml --profile ${Profile}	
 	@aws s3 cp Makefile ${S3FullPath}/Makefile --profile ${Profile}
+	@aws s3 ls ${S3FullPath}/ --profile ${Profile}
 
 tear-down:
 ## Attempt to remove all in one shot -  NEEDS work - Always verify that stuff was deleted
