@@ -143,18 +143,18 @@ test-ec2:
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
 
-lb-url:
-	@aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile ${Profile} --region ${LocalAWSRegion}
+alb-url:
+	@aws cloudformation describe-stacks --stack-name ${AsgAlbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile ${Profile} --region ${LocalAWSRegion}
 
-lb-test:
-	@LB_URL=$$(aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text --profile ${Profile} --region ${LocalAWSRegion}) && \
-	echo "Load Balancer URL: $$LB_URL" && \
+alb-test:
+	@LB_URL=$$(aws cloudformation describe-stacks --stack-name ${AsgAlbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text --profile ${Profile} --region ${LocalAWSRegion}) && \
+	echo "ALB Balancer URL: $$LB_URL" && \
 	while sleep 0.5; do \
 		curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $$LB_URL; \
 	done
-lb-stress:
-	@LB_URL=$$(aws cloudformation describe-stacks --stack-name ${AsgLbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text --profile ${Profile} --region ${LocalAWSRegion}) && \
-	echo "Load Balancer URL: $$LB_URL" && \
+alb-stress:
+	@LB_URL=$$(aws cloudformation describe-stacks --stack-name ${AsgAlbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text --profile ${Profile} --region ${LocalAWSRegion}) && \
+	echo "ALB Balancer URL: $$LB_URL" && \
 	ab -n 100 -c 1 $$LB_URL
 
 del-iam:
@@ -175,8 +175,13 @@ del-test:
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${TestStackName}" --profile ${Profile}
 
 del-asg-alb:
-	@read -p "Are you sure that you want to destroy stack '${AsgLbStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
-	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgLbStackName}" --profile ${Profile}
+	@read -p "Are you sure that you want to destroy stack '${AsgAlbStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
+	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgAlbStackName}" --profile ${Profile}
+
+
+del-asg-nlb:
+	@read -p "Are you sure that you want to destroy stack '${AsgNlbStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
+	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgNlbStackName}" --profile ${Profile}
 
 s3:
 	aws s3 rm  ${S3FullPath}/ --recursive --profile ${Profile}
