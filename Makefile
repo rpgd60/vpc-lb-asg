@@ -54,7 +54,6 @@ all:  iam vpc vpc-endpoints asg
 iam:
 	aws cloudformation deploy \
 		--template-file ./iam.yaml \
-		--region ${LocalAWSRegion} \
 		--stack-name ${IamStackName} \
 		--parameter-overrides \
 			Project=${Project} \
@@ -67,7 +66,6 @@ iam:
 vpc:
 	aws cloudformation deploy \
 		--template-file ./vpc.yaml \
-		--region ${LocalAWSRegion} \
 		--stack-name ${VpcStackName} \
 		--parameter-overrides \
 			Project=${Project} \
@@ -84,7 +82,6 @@ vpc:
 vpc-endpoints: 
 	aws cloudformation deploy \
 		--template-file ./vpc-endpoints.yaml \
-		--region ${LocalAWSRegion} \
 		--stack-name ${VpcEndpointStackName} \
 		--parameter-overrides \
 			AppName=${AppName} \
@@ -99,7 +96,6 @@ vpc-endpoints:
 asg-alb:
 	aws cloudformation deploy \
 		--template-file ./asg-alb.yaml \
-		--region ${LocalAWSRegion} \
 		--stack-name ${AsgAlbStackName} \
 		--parameter-overrides \
 			AppName=${AppName} \
@@ -117,7 +113,6 @@ asg-alb:
 asg-nlb:
 	aws cloudformation deploy \
 		--template-file ./asg-nlb.yaml \
-		--region ${LocalAWSRegion} \
 		--stack-name ${AsgNlbStackName} \
 		--parameter-overrides \
 			AppName=${AppName} \
@@ -134,7 +129,6 @@ asg-nlb:
 test-ec2:
 	aws cloudformation deploy \
 		--template-file ./instance.yaml \
-		--region ${LocalAWSRegion} \
 		--stack-name ${TestStackName} \
 		--parameter-overrides \
 			AppName=${AppName} \
