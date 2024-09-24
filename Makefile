@@ -46,7 +46,7 @@ BastionKeyName ?= demo-${LocalAWSRegion}
 TargetAutoScaling ?= "false"
 ## S3FullPath ?= "s3://rp-demo1/aws/autoscaling/fulldemo"
 S3FullPath ?= "s3://demos-2023-rp/cfn/autoscaling"
-Profile ?= rafaadmin
+Profile ?= sso-madmin
 
 #######################################################
 all:  iam vpc vpc-endpoints asg
