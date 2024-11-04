@@ -1,3 +1,4 @@
+MAKEFILE_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 .DEFAULT_GOAL ?= help
 .PHONY: help
 
@@ -18,8 +19,10 @@ help:
 ###################### Parameters ######################
 Description ?= VPC and ASG with ALB
 # CFN Stack Parameters
-AppName ?= app3
-Project ?= p33
+AppName ?= app1
+AppName2 ?= AppName2
+Project ?= proj1
+Project2 ?= proj2
 Environment ?= dev
 LocalAWSRegion ?= eu-south-2 ## eu-west-1
 
@@ -40,17 +43,20 @@ IamStackName ?= ${Project}-${Environment}-iam
 VpcStackName ?= ${Project}-${Environment}-vpc
 VpcEndpointStackName ?= ${Project}-${Environment}-vpce
 AsgAlbStackName ?= ${Project}-${Environment}-asg-alb
+AsgAlbStackName2 ?= ${AsgAlbStackName}-2
 AsgNlbStackName ?= ${Project}-${Environment}-asg-nlb
 TestStackName ?= ${Project}-${Environment}-test-ec2
 BastionKeyName ?= demo-${LocalAWSRegion}
 TargetAutoScaling ?= "false"
 ## S3FullPath ?= "s3://rp-demo1/aws/autoscaling/fulldemo"
-S3FullPath ?= "s3://demos-2023-rp/cfn/autoscaling"
+S3FullPath ?= "s3://demos-rp-eu-south-2/cfn/autoscaling"
 Profile ?= sso-madmin
 
 #######################################################
+.PHONY: all
 all:  iam vpc vpc-endpoints asg
 
+.PHONY: iam
 iam:
 	aws cloudformation deploy \
 		--template-file ./iam.yaml \
@@ -62,7 +68,7 @@ iam:
 		--capabilities CAPABILITY_NAMED_IAM \
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
-
+.PHONY: vpc
 vpc:
 	aws cloudformation deploy \
 		--template-file ./vpc.yaml \
@@ -78,7 +84,7 @@ vpc:
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
 
-
+.PHONY: vpc-endpoints
 vpc-endpoints: 
 	aws cloudformation deploy \
 		--template-file ./vpc-endpoints.yaml \
@@ -93,6 +99,7 @@ vpc-endpoints:
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
 
+.PHONY: asg-alb
 asg-alb:
 	aws cloudformation deploy \
 		--template-file ./asg-alb.yaml \
@@ -110,6 +117,24 @@ asg-alb:
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
 
+.PHONY: asg-alb2
+asg-alb2:
+	aws cloudformation deploy \
+		--template-file ./asg-alb.yaml \
+		--stack-name ${AsgAlbStackName2} \
+		--parameter-overrides \
+			AppName=${AppName2} \
+			Project=${Project2} \
+			Environment=${Environment} \
+			VpcStackName=${VpcStackName} \
+			TargetAutoScaling=${TargetAutoScaling} \
+			WebAmiId=${WebAmiId} \
+			WebInstanceType=${WebInstanceType} \
+		--no-fail-on-empty-changeset \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--profile ${Profile} \
+		--region ${LocalAWSRegion}
+.PHONY: asg-nlb
 asg-nlb:
 	aws cloudformation deploy \
 		--template-file ./asg-nlb.yaml \
@@ -126,6 +151,7 @@ asg-nlb:
 		--capabilities CAPABILITY_NAMED_IAM \
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
+.PHONY: test-ec2
 test-ec2:
 	aws cloudformation deploy \
 		--template-file ./instance.yaml \
@@ -142,58 +168,64 @@ test-ec2:
 		--capabilities CAPABILITY_NAMED_IAM \
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
-
+.PHONY: alb-url
 alb-url:
 	@aws cloudformation describe-stacks --stack-name ${AsgAlbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text  --profile ${Profile} --region ${LocalAWSRegion}
-
+.PHONY: alb-test
 alb-test:
 	@LB_URL=$$(aws cloudformation describe-stacks --stack-name ${AsgAlbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text --profile ${Profile} --region ${LocalAWSRegion}) && \
 	echo "ALB Balancer URL: $$LB_URL" && \
 	while sleep 0.5; do \
 		curl -s -o /dev/null -w "%{url_effective}, %{response_code}, %{time_total}\n" $$LB_URL; \
-	done
+	
+.PHONY: alb-stress
 alb-stress:
 	@LB_URL=$$(aws cloudformation describe-stacks --stack-name ${AsgAlbStackName} --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' --output text --profile ${Profile} --region ${LocalAWSRegion}) && \
 	echo "ALB Balancer URL: $$LB_URL" && \
 	ab -n 100 -c 1 $$LB_URL
-
+.PHONY: del-iam
 del-iam:
 	@read -p "Are you sure that you want to destroy stack '${IamStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${IamStackName}" --profile ${Profile}
 
+.PHONY: del-vpc
 del-vpc:
 	@read -p "Are you sure that you want to destroy stack '${VpcStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${VpcStackName}" --profile ${Profile}
 
-
+.PHONY: del-vpc-endpoints
 del-vpc-endpoints:
 	@read -p "Are you sure that you want to destroy stack '${VpcEndpointStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${VpcEndpointStackName}" --profile ${Profile}
-
+.PHONY del-test
 del-test:
 	@read -p "Are you sure that you want to destroy stack '${TestStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${TestStackName}" --profile ${Profile}
 
+.PHONY: del-asg-alb
 del-asg-alb:
 	@read -p "Are you sure that you want to destroy stack '${AsgAlbStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgAlbStackName}" --profile ${Profile}
-
-
+.PHONY: del-asg-alb2
+del-asg-alb2:
+	@read -p "Are you sure that you want to destroy stack '${AsgAlbStackName2}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
+	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgAlbStackName2}" --profile ${Profile}
+.PHONY: del-asg-nlb
 del-asg-nlb:
 	@read -p "Are you sure that you want to destroy stack '${AsgNlbStackName}'? [y/N]: " sure && [ $${sure:-N} = 'y' ]
 	aws cloudformation delete-stack --region ${LocalAWSRegion} --stack-name "${AsgNlbStackName}" --profile ${Profile}
-
+.PHONY: s3
 s3:
-	aws s3 rm  ${S3FullPath}/ --recursive --profile ${Profile}
-	@aws s3 cp iam.yaml ${S3FullPath}/iam.yaml --profile ${Profile}
-	@aws s3 cp vpc.yaml ${S3FullPath}/vpc.yaml --profile ${Profile}
-	@aws s3 cp vpc-endpoints.yaml ${S3FullPath}/vpc-endpoints.yaml --profile ${Profile}
-	@aws s3 cp instance.yaml ${S3FullPath}/instance.yaml --profile ${Profile}
-	@aws s3 cp asg-alb.yaml ${S3FullPath}/asg-alb.yaml --profile ${Profile}
-	@aws s3 cp asg-nlb.yaml ${S3FullPath}/asg-nlb.yaml --profile ${Profile}	
-	@aws s3 cp Makefile ${S3FullPath}/Makefile --profile ${Profile}
-	@aws s3 ls ${S3FullPath}/ --profile ${Profile}
-
+	aws s3 rm  ${S3FullPath}/ --recursive --profile ${Profile} --region ${LocalAWSRegion}
+	@aws s3 cp iam.yaml ${S3FullPath}/iam.yaml --profile ${Profile} --region ${LocalAWSRegion}
+	@aws s3 cp vpc.yaml ${S3FullPath}/vpc.yaml --profile ${Profile} --region ${LocalAWSRegion}
+	@aws s3 cp vpc-endpoints.yaml ${S3FullPath}/vpc-endpoints.yaml --profile ${Profile} --region ${LocalAWSRegion}
+	@aws s3 cp instance.yaml ${S3FullPath}/instance.yaml --profile ${Profile} --region ${LocalAWSRegion}
+	@aws s3 cp asg-alb.yaml ${S3FullPath}/asg-alb.yaml --profile ${Profile}  --region ${LocalAWSRegion}
+	@aws s3 cp asg-nlb.yaml ${S3FullPath}/asg-nlb.yaml --profile ${Profile}	 --region ${LocalAWSRegion}
+	@aws s3 cp Makefile ${S3FullPath}/Makefile --profile ${Profile} --region ${LocalAWSRegion}
+	@aws s3 ls ${S3FullPath}/ --profile ${Profile}  --region ${LocalAWSRegion}
+.PHONY: tear-down
 tear-down:
 ## Attempt to remove all in one shot -  NEEDS work - Always verify that stuff was deleted
 ## Useful to launch and go for a coffee
