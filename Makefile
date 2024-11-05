@@ -9,9 +9,11 @@ help:
 	@echo "	iam - deploy iam role for EC2 instances"
 	@echo "	vpc - deploy VPC"
 	@echo "	del-vpc - delete VPC"
-	@echo "	asg - deploy ALB and ASG - requires deploying VPC first"
-	@echo "	del-asg - delete ALB and ASG" 
-	@echo "	lb-url - show the URL of ALB"	
+	@echo "	asg-alb - deploy ALB and ASG - requires deploying VPC first"
+	@echo "	asg-alb2 - deploy 2nd stack with ALB and ASG - requires deploying VPC first"
+	@echo "	del-asg-alb - delete stack with ALB and ASG" 
+	@echo "	del-asg-alb2 - delete 2nd stack with ALB and ASG" 	
+	@echo "	lb-url - show the URL of ALB"
 	@echo "	lb-test - Verify connectivity" 
 	@echo "	lb-stress - attempt to trigger autoscaling" 
 
@@ -34,7 +36,7 @@ ServerAmiId ?= ${WebAmiId}
 WebInstanceType ?= t4g.micro
 ServerInstanceType ?= $(WebInstanceType)
 # VPC Parameters
-CreateNatGateways ?= false
+CreateNatGateways ?= true
 CreateBastion ?= false
 VpcCIDR ?= "10.200.0.0/16"
 
@@ -112,7 +114,7 @@ asg-alb:
 			TargetAutoScaling=${TargetAutoScaling} \
 			WebAmiId=${WebAmiId} \
 			WebInstanceType=${WebInstanceType} \
-		--no-fail-on-empty-changeset \
+		--no-fail-on-empty-changeset \	
 		--capabilities CAPABILITY_NAMED_IAM \
 		--profile ${Profile} \
 		--region ${LocalAWSRegion}
