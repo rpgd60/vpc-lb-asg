@@ -30,7 +30,56 @@ Resources:
             Action:
               - sts:AssumeRole
 
+# ------------------------------- Event Bridge Rules ----------------
+  EventBridgeSsmOpsItemPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "EventBridgeCreateSsmOpsItem"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "ssm:CreateOpsItem"
+              - "ssm:AddTagsToResource"
+            Resource: 
+              - "arn:aws:ssm:*:*:opsitem/*"
+      Roles:
+        - Ref: EventBridgeSsmOpsItemRole
 
+  EventBridgeSsmOpsItemRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ["-", [!Ref Project, !Ref Environment, "EventBridgeSsmOpsItemRole"]]
+      Path: "/"
+      # ManagedPolicyArns:
+      #   - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  TermStopInstanceOpsItem:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: Ec2TermStopOpsItem
+      EventPattern: >-
+        {"source": ["aws.ec2"],"detail-type": ["EC2 Instance State-change Notification"],
+        "detail": {"state": ["terminated", "stopped"] }}
+      State: ENABLED
+      Description: SSM OpsItem if Instance is Stopped
+      EventBusName: default
+      Targets:
+        - Id: Idec516bd8-d925-4b17-bf02-a053d3a3ddbc
+          Arn:
+            Fn::Sub: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:opsitem
+          RoleArn: !GetAtt EventBridgeSsmOpsItemRole.Arn
+            
 
 # -------------------------------Outputs ----------------
 Outputs:
