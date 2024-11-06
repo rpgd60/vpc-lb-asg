@@ -63,10 +63,10 @@ Parameters:
       - t3.micro
     Default: t3.micro
 
-  BastionKeyName:
-    Description:  Key pair name for Bastion Host
-    Type: AWS::EC2::KeyPair::KeyName
-    Default:  "mkeyireland2" # "keyspain1" #
+  # BastionKeyName:
+  #   Description:  Key pair name for Bastion Host
+  #   Type: AWS::EC2::KeyPair::KeyName
+  #   Default:  "mkeyireland2" # "keyspain1" #
 
   BastionSSHRangeAllow:
     Description: The IP address range that can be used to SSH to the EC2 instances
@@ -307,7 +307,7 @@ Resources:
       # IamInstanceProfile: "String"
       ImageId: !Ref BastionAmiId
       InstanceType: !Ref BastionInstanceType
-      KeyName: !Ref BastionKeyName
+      # KeyName: !Ref BastionKeyName
       SecurityGroupIds: [!Ref BastionSecurityGroup ]
       SourceDestCheck: true
       SubnetId: !Ref PublicSubnet1
@@ -334,6 +334,41 @@ Resources:
 
   
 
+
+##---------------- VPC Flow Log -------------
+## TODO : move log to iam.yaml
+  VPCFlowLog:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt FlowLogRole.Arn
+      LogGroupName: !Sub /aws/vpc/flow-logs/${Project}-${Environment}
+      ResourceId: !Ref VPC
+      ResourceType: VPC
+      TrafficType: ALL  # Options: ACCEPT, REJECT, or ALL
+      LogDestinationType: cloud-watch-logs  # Options: cloud-watch-logs, s3
+      MaxAggregationInterval: 600  # Optional, in seconds (300 or 600)
+
+  FlowLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: vpc-flow-logs.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: VPCFlowLogPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
 # -------------------------------Outputs ----------------
 Outputs:
 
@@ -396,7 +431,3 @@ Outputs:
     Value: !Ref HttpSecurityGroup
     Export:
       Name: !Sub '${AWS::StackName}-HttpSecurityGroup'
-
-
-
-
