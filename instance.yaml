@@ -66,11 +66,11 @@ Resources:
             !Sub ${VpcStackName}-HttpSecurityGroup
       SubnetId:
         Fn::ImportValue:
-          !Sub ${VpcStackName}-PrivateSubnet1
+          !Sub ${VpcStackName}-PublicSubnet1
       IamInstanceProfile: !Ref InstInstanceProfile
       Tags:
         - Key: Name
-          Value: !Sub ${Project}-${EnvironmentName}-priv
+          Value: !Sub ${Project}-${EnvironmentName}-pub
         - Key: app
           Value: !Ref AppName 
         - Key: disposable
