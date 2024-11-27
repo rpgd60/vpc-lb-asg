@@ -142,31 +142,31 @@ Resources:
       ToPort: 443
       SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
 
-  WebInboundRuleBastionSSH:
-    Type: AWS::EC2::SecurityGroupIngress
-    # Condition: WebFromBastion
-    Properties:
-      Description: Allow SSH from Bastion Hosts (sg)
-      GroupId: !Ref WebServerSecurityGroup
-      IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
-      SourceSecurityGroupId: 
-        Fn::ImportValue:
-          !Sub ${VpcStackName}-BastionSecurityGroup
+  # WebInboundRuleBastionSSH:
+  #   Type: AWS::EC2::SecurityGroupIngress
+  #   # Condition: WebFromBastion
+  #   Properties:
+  #     Description: Allow SSH from Bastion Hosts (sg)
+  #     GroupId: !Ref WebServerSecurityGroup
+  #     IpProtocol: tcp
+  #     FromPort: 22
+  #     ToPort: 22
+  #     SourceSecurityGroupId: 
+  #       Fn::ImportValue:
+  #         !Sub ${VpcStackName}-BastionSecurityGroup
 
-  WebInboundRuleBastionICMP:
-    Type: AWS::EC2::SecurityGroupIngress
-    # Condition: WebFromBastion   
-    Properties:
-      Description: Allow ICMP from Bastion Hosts (sg)
-      GroupId: !Ref WebServerSecurityGroup
-      IpProtocol: icmp
-      FromPort: -1
-      ToPort: -1
-      SourceSecurityGroupId: 
-        Fn::ImportValue:
-          !Sub ${VpcStackName}-BastionSecurityGroup
+  # WebInboundRuleBastionICMP:
+  #   Type: AWS::EC2::SecurityGroupIngress
+  #   # Condition: WebFromBastion   
+  #   Properties:
+  #     Description: Allow ICMP from Bastion Hosts (sg)
+  #     GroupId: !Ref WebServerSecurityGroup
+  #     IpProtocol: icmp
+  #     FromPort: -1
+  #     ToPort: -1
+  #     SourceSecurityGroupId: 
+  #       Fn::ImportValue:
+  #         !Sub ${VpcStackName}-BastionSecurityGroup
 
   WebTargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
